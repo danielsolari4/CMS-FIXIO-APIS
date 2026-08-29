@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Ray.Dtos;
 using Ray.Managers;
+using Ray.Model.NewContext;
 using Ray.Model.NewContext.Entities;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,16 +26,16 @@ namespace Ray.BackendApi.Attributes
 
     public class HasPermissionsHandler : AuthorizationHandler<HasPermissionRequirement>
     {
-        private readonly UserManager<User> _userManager;
+        private readonly ModelContext _dbContext;
         private readonly IApplicationUserManager _applicationUserManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public HasPermissionsHandler(UserManager<User> userManager, IApplicationUserManager applicationUserManager, IHttpContextAccessor httpContextAccessor)
+        public HasPermissionsHandler(ModelContext dbContext, IApplicationUserManager applicationUserManager, IHttpContextAccessor httpContextAccessor)
         {
-            _userManager = userManager;
+            _dbContext = dbContext;
             _applicationUserManager = applicationUserManager;
             _httpContextAccessor = httpContextAccessor;
         }
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, HasPermissionRequirement requirement)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, HasPermissionRequirement requirement)
         {
             var action = _httpContextAccessor.HttpContext.Request.RouteValues["action"].ToString();
             var controller = _httpContextAccessor.HttpContext.Request.RouteValues["controller"].ToString();
@@ -44,22 +45,22 @@ namespace Ray.BackendApi.Attributes
                 if (context.User.Identity.IsAuthenticated)
                 {
                     var loggedUser = GetLoggedUser(context);
-                    var user = _userManager.FindByEmailAsync(loggedUser.Email).Result;
-                    if (user == null || !user.IsEnabled || !_applicationUserManager.HasAccessToActionAsync(controller, action, loggedUser.RolesInt).Result)
+                    var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == loggedUser.Id);
+                    var hasAccess = await _applicationUserManager.HasAccessToActionAsync(controller, action, loggedUser.RolesInt);
+                    if (user == null || !user.IsEnabled || user.IsDeleted || !hasAccess)
                     {
                         context.Fail();
-                        return Task.CompletedTask;
+                        return;
                     }
                     else
                     {
                         context.Succeed(requirement);
-                        return Task.CompletedTask;
+                        return;
                     }
                 }
             }
 
             context.Fail();
-            return Task.CompletedTask;
         }
 
         public LoggedUserDto GetLoggedUser(AuthorizationHandlerContext context)

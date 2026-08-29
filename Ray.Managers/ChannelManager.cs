@@ -31,6 +31,7 @@ namespace Ray.Managers
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.CreateMap<Channel, ChannelDto>()
                     .ForMember(x => x.Media, opt => opt.Ignore());
 

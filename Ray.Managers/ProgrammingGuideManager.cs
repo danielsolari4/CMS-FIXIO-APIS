@@ -42,6 +42,7 @@ namespace Ray.Managers
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<ProgrammingGuideProfile>();
                 cfg.AddProfile<CreateMediaProfile>();
                 cfg.AddProfile<NodeProfile>();

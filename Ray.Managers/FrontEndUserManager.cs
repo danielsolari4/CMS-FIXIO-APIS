@@ -47,6 +47,7 @@ namespace Ray.Managers
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<UserProfile>();
                 cfg.AddProfile<NodeProfile>();
                 cfg.AddProfile<NewsProfile>();

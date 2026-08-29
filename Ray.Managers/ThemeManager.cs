@@ -32,6 +32,7 @@ namespace Ray.Managers
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<ThemeProfile>();
             });
 

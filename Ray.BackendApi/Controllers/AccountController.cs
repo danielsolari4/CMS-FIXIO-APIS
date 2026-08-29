@@ -14,11 +14,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Ray.BackendApi.Models;
 using Ray.Dtos.Configuration;
 using Ray.Dtos.Login;
 using Ray.Managers;
+using Ray.Model.NewContext;
 using Ray.Model.NewContext.Entities;
 using Ray.Utils.Configuration;
 using Ray.Utils.Solr;
@@ -37,27 +39,33 @@ namespace Ray.BackendApi.Controllers
         private const string LocalLoginProvider = "Local";
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
+        private readonly ModelContext _dbContext;
         private readonly AppSettings _appSettings;
-        private readonly IUserManager _userManagerTwo;
+        private readonly IServiceProvider _serviceProvider;
         private readonly SignInManager<User> _signInManager;
         private readonly IOptions<SMTP> _smtpSettings;
         private readonly IMailSender _mailSender;
+        private readonly IPasswordHasher<User> _passwordHasher;
         private readonly IApplicationUserManager _applicationUserManager;
-        public AccountController(IUserManager userManager,
-            UserManager<User> identityUserManager,
+        public AccountController(UserManager<User> identityUserManager,
+            ModelContext dbContext,
             AppSettings appSettings, SignInManager<User> signInManager,
             RoleManager<Role> roleManager,
             IOptions<SMTP> smtpSettings,
             IMailSender mailSender,
+            IPasswordHasher<User> passwordHasher,
+            IServiceProvider serviceProvider,
             IApplicationUserManager applicationUserManager)
         {
             _userManager = identityUserManager;
+            _dbContext = dbContext;
             _appSettings = appSettings;
             _signInManager = signInManager;
-            _userManagerTwo = userManager;
+            _serviceProvider = serviceProvider;
             _roleManager = roleManager;
             _smtpSettings = smtpSettings;
             _mailSender = mailSender;
+            _passwordHasher = passwordHasher;
             _applicationUserManager = applicationUserManager;
         }
 
@@ -453,14 +461,15 @@ namespace Ray.BackendApi.Controllers
             if (user.LockoutEndDateUtc.HasValue && DateTime.SpecifyKind(user.LockoutEndDateUtc.Value, DateTimeKind.Utc) > DateTime.UtcNow)
                 return AuthenticationResult.Failed("locked_out", "The user account is locked. Try again later.");
 
-            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
-            if (!passwordValid)
+            var passwordVerification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+            if (passwordVerification == PasswordVerificationResult.Failed)
             {
                 user.AccessFailedCount++;
                 if (user.LockoutEnabled && user.AccessFailedCount >= 5)
                     user.LockoutEndDateUtc = DateTime.UtcNow.AddHours(4);
 
-                await _userManager.UpdateAsync(user);
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE [User] SET [AccessFailedCount] = {user.AccessFailedCount}, [LockoutEndDateUtc] = {user.LockoutEndDateUtc} WHERE [Id] = {user.Id}");
 
                 if (user.LockoutEndDateUtc.HasValue && user.LockoutEndDateUtc.Value > DateTime.UtcNow)
                     return AuthenticationResult.Failed("locked_out", "The user account has been locked due to too many failed login attempts.");
@@ -469,7 +478,8 @@ namespace Ray.BackendApi.Controllers
             }
 
             user.AccessFailedCount = 0;
-            await _userManager.UpdateAsync(user);
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE [User] SET [AccessFailedCount] = {user.AccessFailedCount} WHERE [Id] = {user.Id}");
 
             if (!user.IsEnabled || user.IsDeleted)
                 return AuthenticationResult.Failed("invalid_grant", "The user name or password is incorrect.");
@@ -642,7 +652,8 @@ namespace Ray.BackendApi.Controllers
                 }
             }
 
-            return Ok(CMSResponse(await _userManagerTwo.GetById(user.Id)));
+            var userManager = _serviceProvider.GetRequiredService<IUserManager>();
+            return Ok(CMSResponse(await userManager.GetById(user.Id)));
         }
 
         [Route("ResendUserRequest")]

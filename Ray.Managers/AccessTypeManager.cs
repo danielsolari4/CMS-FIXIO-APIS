@@ -29,6 +29,7 @@ namespace Ray.Managers
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.CreateMap<AccessTypeDto, AccessType>();
                 cfg.CreateMap<AccessType, AccessTypeDto>();
             });

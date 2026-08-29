@@ -550,6 +550,7 @@ namespace Ray.Managers
         {
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<NodeProfile>();
                 cfg.AddProfile<NewsProfile>();
                 cfg.AddProfile<PageProfile>();

@@ -83,9 +83,14 @@ namespace Ray.BackendApi
                 {
                     options.AddPolicy("CorsPolicy",
                         builder => builder
-                            .WithOrigins("*")
+                            .WithOrigins(
+                                "https://localhost:5001",
+                                "http://localhost:5000",
+                                "https://localhost:44325",
+                                "http://localhost:19917")
                             .AllowAnyHeader()
-                            .AllowAnyMethod());
+                            .AllowAnyMethod()
+                            .AllowCredentials());
                 });
 
             services.AddControllers()
@@ -159,10 +164,10 @@ namespace Ray.BackendApi
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ray.BackendApi v1"));
             }
 
-            app.UseCors("CorsPolicy");
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors("CorsPolicy");
             app.UseResponseCaching();
             app.UseAuthentication();
             app.UseAuthorization();

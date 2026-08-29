@@ -497,6 +497,7 @@ namespace Ray.Managers
         {
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<UpdateMediaProfile>();
             });
 
@@ -507,6 +508,7 @@ namespace Ray.Managers
         {
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<CreateMediaProfile>();
                 cfg.AddProfile<CategoryProfile>();
                 cfg.AddProfile<GalleryProfile>();

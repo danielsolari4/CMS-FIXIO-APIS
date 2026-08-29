@@ -35,6 +35,7 @@ namespace Ray.Managers
             _appSettings = appSettings;
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
+                cfg.ShouldMapMethod = methodInfo => false;
                 cfg.AddProfile<PageProfile>();
                 cfg.AddProfile<NodeProfile>();
                 cfg.AddProfile<KeywordProfile>();
