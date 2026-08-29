@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+		<PropertyGroup>
+				<TargetFramework>net10.0</TargetFramework>
+				<UserSecretsId>e664b7b0-949e-42cc-b123-1ac04371d157</UserSecretsId>
+				<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+				<DockerfileContext>.</DockerfileContext>
+				<DockerfileFile>Dockerfile</DockerfileFile>
+				<OutputType>Exe</OutputType>
+				<StartupObject></StartupObject>
+		</PropertyGroup>
+
+		<ItemGroup>
+				<PackageReference Include="LazyCache.AspNetCore" Version="2.4.0" />
+				<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+				<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
+				<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.11" />
+				<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+				  <PrivateAssets>all</PrivateAssets>
+				  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+				</PackageReference>
+				<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+				<PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+				<PackageReference Include="System.Drawing.Common" Version="10.0.11" />
+		</ItemGroup>
+
+		<ItemGroup>
+				<ProjectReference Include="..\Ray.Managers\Ray.Managers.csproj" />
+		</ItemGroup>
+
+</Project>

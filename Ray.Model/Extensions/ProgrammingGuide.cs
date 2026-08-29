@@ -1,0 +1,12 @@
+﻿
+
+namespace Ray.Model.NewContext.Entities
+{
+    public partial class ProgrammingGuide : IAuditableEntity
+    {
+        partial void OnCreated()
+        {
+            IsEnabled = true;
+        }
+    }
+}

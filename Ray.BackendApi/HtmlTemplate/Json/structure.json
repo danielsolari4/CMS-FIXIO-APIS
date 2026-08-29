@@ -1,0 +1,421 @@
+﻿{
+  "Layout": {
+    "Name": "Layout 1",
+    "Html": "<div style='display: none'>pingdom-test</div><div class='layout {{layout.class}}'>[{areas}]</div>",
+    "Types": [
+      {
+        "Id": 1,
+        "Css": "layout-1",
+        "Description": "Full Width",
+        "AreasCount": 1
+      },
+      {
+        "Id": 2,
+        "Css": "layout-2",
+        "Description": "Content/Sidebar",
+        "AreasCount": 2
+      },
+      {
+        "Id": 3,
+        "Css": "layout-3",
+        "Description": "Full Width + Content/Sidebar",
+        "AreasCount": 3
+      }
+    ]
+  },
+  "Area": {
+    "Name": "Area 1",
+    "Html": "<div class='area area-temp-{{area.css}} {{area.thematic}}' data-tematica='{{area.backgroundColor}}'>[{titleHtml}]<div class='holder'>[{regions}]</div></div>",
+    "HtmlTitle": "<div class='title'><h4>{{area.title}}</h4><a href='{{area.link}}'>{{area.labelLink}}</a></div>",
+    "Css": [ "class1", "class2" ],
+    "Controls": [],
+    "Structure": {
+      "Position": 0,
+      "Title": "",
+      "UrlLink": "",
+      "Target": "",
+      "LabelLink": "",
+      "Class": "",
+      "BackgroundColor": "",
+      "thematic": ""
+    }
+  },
+  "Region": {
+    "Name": "Region 1",
+    "Html": "<div class='region {{region.distribution}} {{region.css}} {{region.thematic}}' data-tematica='{{region.backgroundColor}}'>[{titleHtml}]<div class='holder'> [{components}]</div></div>",
+    "HtmlTitle": "<div class='title'><h4>{{region.title}}</h4><a href='{{region.link}}'>{{region.labelLink}}</a></div>",
+    "Distribution": [
+      {
+        "Name": "region-col-1",
+        "Description": "1 columna",
+        "Icon": "mdi mdi-square",
+        "Id": 1
+      },
+      {
+        "Name": "region-col-2",
+        "Description": "2 columna",
+        "Icon": "mdi mdi-view-agenda",
+        "Id": 2
+      },
+      {
+        "Name": "region-col-3",
+        "Description": "3 columna",
+        "Icon": "mdi mdi-view-parallel",
+        "Id": 3
+      },
+      {
+        "Name": "region-col-4",
+        "Description": "4 columna",
+        "Icon": "mdi mdi-view-headline",
+        "Id": 4
+      }
+    ],
+    "Css": [
+      {
+        "Name": "region-grid-1",
+        "Description": "1 columna",
+        "Icon": "mdi mdi-square",
+        "Id": 3,
+        "GroupCssId": 2,
+        "GridItems": [ 3 ]
+      },
+      {
+        "Name": "region-grid-2",
+        "Description": "2 columnas",
+        "Icon": "mdi mdi-view-agenda",
+        "Id": 4,
+        "GroupCssId": 2,
+        "GridItems": [ 3, 3 ]
+      },
+      {
+        "Name": "region-grid-3",
+        "Description": "3 columnas",
+        "Icon": "mdi mdi-view-week",
+        "Id": 5,
+        "GroupCssId": 2,
+        "GridItems": [ 2, 2, 2 ]
+      },
+      {
+        "Name": "region-grid-4",
+        "Description": "4 columnas",
+        "Icon": "mdi mdi-reorder-vertical",
+        "Id": 6,
+        "GroupCssId": 2,
+        "GridItems": [ 2, 2, 2, 2 ]
+      },
+      {
+        "Name": "region-grid-1-2",
+        "Description": "1 + 2",
+        "Icon": "mdi mdi-view-quilt",
+        "Id": 6,
+        "GroupCssId": 2,
+        "GridItems": [ 3, 2, 2 ]
+      },
+      {
+        "Name": "region-grid-1-3",
+        "Description": "1 + 3",
+        "Icon": "mdi mdi-view-split-vertical",
+        "Id": 6,
+        "GroupCssId": 2,
+        "GridItems": [ 3, 1, 1, 1 ]
+      }
+    ],
+    "GroupCss": [
+      {
+        "Name": "Columnas",
+        "Id": 2
+      }
+    ],
+    "Structure": {
+      "Title": "",
+      "UrlLink": "",
+      "Target": "",
+      "LabelLink": "",
+      "Class": "",
+      "Position": 0,
+      "BackgroundColor": "",
+      "thematic": ""
+    }
+  },
+
+  "Component": {
+    "Name": "Component",
+    "Html": "<div class='component {{component.css}}'>[{titleHtml}] <div class='holder'>[{component}]</div></div>",
+    "HtmlTitle": "<div class='badge' style='background-color:{{component.badge.backgroundColor}}'><h4>{{component.badge.title}}</h4></div>",
+    "Css": [
+      {
+        "Name": "component--small",
+        "Description": "Simple",
+        "Icon": "mdi mdi-image-size-select-small",
+        "Id": 1
+      },
+      {
+        "Name": "component--medium",
+        "Description": "Imagen Destacada",
+        "Icon": "mdi mdi-image-size-select-large",
+        "Id": 2
+      },
+      {
+        "Name": "component--big",
+        "Description": "Destacado",
+        "Icon": "mdi mdi-image-size-select-actual",
+        "Id": 3
+      },
+      {
+        "Name": "component--no-image",
+        "Description": "No Image",
+        "Icon": "mdi mdi-image-off",
+        "Id": 4
+      }
+    ],
+    "Types": [
+      {
+        "Name": "Sección",
+        "Control": "SelectNode",
+        "Icon": "mdi-file-tree",
+        "Type": 10,
+        "CategoryId": 3,
+        "Html": "<div class='block'><div class='node' data-href='{{Url}}'><div class='image progressive'><div class='loadingImage' style='background: url({{mediaurl}}{{component.Media.Size5Path}})' data-image='{{mediaurl}}{{component.Media.Size2Path}}'></div><div class='overlay'></div></div><div class='text' flowtype min-font='15' max-font='32' font-ratio='25' minimum='256' maximum='1200'><h2>{{component.Title}}</h2></div></div></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "CategoryId": 0,
+          "GalleryId": 0,
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Nota",
+        "Control": "SelectNews",
+        "Icon": "mdi-newspaper",
+        "Type": 1,
+        "CategoryId": 1,
+        "Html": "<div class='block' ng-class='styleFunctions.renderStylesComponentsNews(component)'><div class='nota nota-{{component.properties.MediaDiscriminator}} {{component.properties.NodeContentTitleTheme}}' data-href='/{{component.properties.NodeContentDescription}}/{{Url}}_{{Id}}'><div class='image progressive'><div class='loadingImage' style='background: url({{mediaurl}}{{component.properties.MediaSizesPaths.AssetMediaSizePath5}})' data-image='{{mediaurl}}{{component.properties.MediaSizesPaths.AssetMediaSizePath1}}'></div><div class='overlay'></div></div><div class='text' ng-style='component.BackgroundColor && {backgroundColor: component.BackgroundColor}' flowtype min-font='15' max-font='32' font-ratio='25' minimum='256' maximum='1200'><h4>{{component.properties.NodeContentTitle}}</h4><h2 flowtype min-font='20' max-font='32' font-ratio='25' minimum='256' maximum='1200' ng-style='component.FontColor && {color: component.FontColor}'>{{component.properties.Title}}</h2><p>{{component.properties.Description}}</p><h6><span class='date'>Hace <strong>{{component.properties.PublicationDate}}</strong></span><span class='author'>por <a href='{{component.properties.AuthorLink}}'><strong>{{component.properties.AuthorName}}</strong></a></span></h6></div><a class='nota-link' href='/{{component.properties.NodeContentDescription}}/{{Url}}_{{Id}}'>{{component.properties.Title}}</a></div></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "Link": "",
+          "Class": "",
+          "AuthorName": "",
+          "PublicationDate": "",
+          "Description": "",
+          "MediaSizesPaths": {
+            "Size1Path": "",
+            "Size2Path": "",
+            "Size3Path": "",
+            "Size4Path": "",
+            "Size5Path": ""
+          },
+          "Position": 0,
+          "Id": 0,
+          "Url": ""
+        }
+      },
+      {
+        "Name": "Multimedia",
+        "Control": "SelectNews",
+        "Icon": "mdi-image-outline",
+        "Type": 3,
+        "CategoryId": 1,
+        "Html": "<div class='block'> <div class='nota nota-multimedia nota-{{component.properties.Discriminator}} theme-{{component.properties.NodeContentTitleTheme}}' data-type='{{component.properties.Discriminator}}' data-id='{{component.Id}}'> <div class='image progressive'> <div class='loadingImage' style='background: url({{mediaurl}}{{component.properties.MediaSizesPaths.AssetMediaSizePath2}})' data-image='{{mediaurl}}{{component.properties.MediaSizesPaths.AssetMediaSizePath2}}'></div> <div class='overlay'></div> </div> <div class='text'> <h4>{{component.properties.NodeContentTitle}}</h4> <h2>{{component.properties.Title}}</h2> </div> </div> </div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "Link": "",
+          "Class": "",
+          "MediaSizesPaths": {
+            "Size1Path": "",
+            "Size2Path": "",
+            "Size3Path": "",
+            "Size4Path": "",
+            "Size5Path": ""
+          },
+          "Position": 0,
+          "Id": 0,
+          "Url": ""
+        }
+      },
+      {
+        "Name": "Widget",
+        "Control": "SelectNews",
+        "Icon": "mdi-newspaper",
+        "Type": 4,
+        "CategoryId": 3,
+        "Html": "<div class='block'> <div class='widget' compile='component.properties.Html'>{{component.properties.Html}}</div></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "Link": "",
+          "Class": "",
+          "Position": 0,
+          "Id": 0,
+          "Name": "",
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Últimas Noticias",
+        "Control": "SelectCategory",
+        "Icon": "mdi-new-box",
+        "Type": 5,
+        "CategoryId": 3,
+        "Html": "<div class='block'><div id='last-news-widget' class='widget widget-list-news widget-loading'><div class='widget-title'><h4>{{component.Title}}{{component.Keywords}}</h4><h4>Cantidad de Noticias: {{component.CountNews}}</h4></div><div class='widget-content' data-keywords='{{component.Keywords}}' data-count-news='{{component.CountNews}}' data-node-id='{{component.NodeId}}' data-node-css='{{component.Css}}' data-node-style='small'></div><div class='widget-footer'><a href='javascript:;' class='btn-view-more' data-news-to='6'>Cargar más noticias</a></div></div></div>",
+        "Css": [
+          {
+            "Name": "vertical",
+            "Description": "Vertical",
+            "Icon": "mdi mdi-view-sequential",
+            "Id": 1
+          },
+          {
+            "Name": "horizontal",
+            "Description": "Horizontal",
+            "Icon": "mdi mdi-view-column",
+            "Id": 2
+          },
+
+          {
+            "Name": "grilla",
+            "Description": "Grilla",
+            "Icon": "mdi mdi-view-grid-plus",
+            "Id": 3
+          },
+          {
+            "Name": "highlights",
+            "Description": "Highlights",
+            "Icon": "mdi mdi-alpha-h-box",
+            "Id": 4
+          },
+          {
+            "Name": "listado-uno",
+            "Description": "Listado Uno",
+            "Icon": "mdi mdi-list-status",
+            "Id": 5
+          },
+          {
+            "Name": "listado-dos",
+            "Description": "Listado Dos",
+            "Icon": "mdi mdi-view-list",
+            "Id": 6
+          }
+        ],
+        "Structure": {
+          "Title": "",
+          "Css": "",
+          "NodeId": 0,
+          "CountNews": 0,
+          "Keywords": "",
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Ranking - Top 5",
+        "Control": "SelectCategory",
+        "Icon": "mdi-chart-line-variant",
+        "Type": 6,
+        "CategoryId": 3,
+        "Html": "<div class='block'><div class='widget widget-ranking-news widget-loading'><div class='widget-title'><h4>Notas Más Leídas - {{component.Title}}</h4></div><div class='widget-content' data-node-id='{{component.NodeId}}' data-node-style='small'></div></div></div>",
+        "Css": [
+          {
+            "Name": "vertical",
+            "Description": "Vertical",
+            "Icon": "mdi mdi-view-sequential",
+            "Id": 1
+          },
+          {
+            "Name": "horizontal",
+            "Description": "Horizontal",
+            "Icon": "mdi mdi-view-column",
+            "Id": 2
+          }
+        ],
+        "Structure": {
+          "Title": "",
+          "NodeId": 0,
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Edición Impresa",
+        "Control": "SelectPrintEdition",
+        "Icon": "mdi-newspaper",
+        "Type": 7,
+        "CategoryId": 2,
+        "Html": "<div class='block'><div class='widget widget-print {{component.properties.AutomaticClass}} widget-loading' data-print-id='{{component.properties.NodeId}}'><div class='tapa-diario'><a href='{{component.properties.Link}}'><img src='{{mediaurl}}{{component.properties.Image}}'></div><div class='print-placeholder'></div><div class='print-placeholder'></div><div class='print-placeholder'></div><div class='print-placeholder'></div><div class='print-placeholder'></div></div></div>",
+        "Css": "",
+        "Structure": {
+          "Image": "",
+          "Link": "",
+          "Class": "",
+          "Position": 0,
+          "Id": 0,
+          "Html": "",
+          "AutomaticClass": ""
+        }
+      },
+      {
+        "Name": "Notas por Autor & Categoría",
+        "Control": "SelectCategory",
+        "Icon": "mdi-account-edit",
+        "Type": 8,
+        "CategoryId": 3,
+        "Html": "<div class='widget widget-featured-category widget-loading' data-node-id='{{component.NodeId}}' data-author-id='{{component.AuthorId}}' date-component-css='author'><div class='widget-title'><h4><strong>Categoría:</strong> {{component.Title}}</h4><h4><strong>Autor:</strong> {{component.AuthorName}}</h4></div><div class='widget-content'></div></div>",
+        "Css": "",
+        "Structure": {
+          "AuthorId": 0,
+          "NodeId": 0,
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Galería Multimedia",
+        "Control": "SelectGallery",
+        "Icon": "mdi-presentation-play",
+        "Type": 9,
+        "CategoryId": 3,
+        "Html": "<div class='widget widget-multimedia-gallery' data-gallery-id='{{component.GalleryId}}'><div class='widget-title'><h4><strong>Galería:</strong> {{component.Title}}</h4></div><div class='widget-content'></div></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "CategoryId": 0,
+          "GalleryId": 0,
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Estadisticas Deportivas",
+        "Control": "",
+        "Icon": "mdi-soccer-field",
+        "Type": 2,
+        "CategoryId": 3,
+        "Html": "<div class='widget widget-stats'><div class='widget-title'><h4>Estadisticas</h4><div class='select'><select name='liga' id='liga' class='form-control selectpicker'></select></div></div><div class='widget-content'><ul id='liga-options'></ul><div id='datosResultados'></div></div></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "CategoryId": 0,
+          "GalleryId": 0,
+          "Html": ""
+        }
+      }
+
+    ]
+  },
+
+  "CategoryComponent": [
+    {
+      "Name": "News",
+      "Id": 1
+    },
+    {
+      "Name": "PrintEdition",
+      "Id": 2
+    },
+    {
+      "Name": "Widget",
+      "Id": 3
+    }
+
+  ]
+
+
+}

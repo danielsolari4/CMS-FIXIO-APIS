@@ -1,0 +1,67 @@
+﻿Si posee guión al final del código lleva parámetro
+
+////Generics
+//entityExc
+ENEX_001	Se ha producido un error al guardar, intentelo de nuevo - {0} (parameter)
+//alreadyExist
+AEEX_001	La entidad {0} ya existe en el sistema -(parameter)
+//inUseExc
+IUEX_001	El valor del campo {0} ya está en uso -(parameter)
+//ConfExc
+CNEX_001	Error de configuración -(parameter)
+//argumentNullExc
+ANEX_001	El valor {0} no puede estar vacío o en blanco -(parameter)
+//argumentExc
+AREX_001	Complete todos los campos requeridos
+//DbUpdateEx
+DBEX_001	No se puede eliminar porque posee items asociados
+//ItemNotFoundException
+NFEX_001	No se puede encontrar el item -(parameter)
+//DeleteException
+DLEX_001	No se pudo eliminar el item  -(parameter)
+
+
+//ProfileImageStoreHelper
+PIEX_001	No se encontró ningún archivo subido
+PIEX_002	Nombre de carpeta de imagenes de perfil
+PIEX_003	El tipo de imágen no está permitido
+PIEX_004	El tamaño de la imágen no puede superar los - {0}(parameter)
+
+
+//ApplicationUserManager
+AUEX_001	Cannot set the confirmation status of the e-mail because user doesn't have an e-mail.
+
+//NewsManager
+NSEX_001	No es posible enviar esta noticia para su aprobación	it is not possible to send this news for approval
+NSEX_002	No es posible aprobar esta noticia	it is not possible to approve this news
+NSEX_003	No es posible desaprobar esta noticia	it is not possible to disapprove this news
+NSEX_004	No es posible publicar esta noticia	it is not possible to publish this news
+NSEX_005	Asset must be published or approved to trigger alert
+
+//URLRedirect
+ULEX_001	Ya existe una página con la URL de origen ingresada.
+
+//MediaController
+MEEX_001	invalid video url
+
+//ImageStoreHelper
+ISEX_001	El formato del archivo es incorrecto	profile picture content type
+ISEX_002	El tamaño de la imágen no puede superar los {0} -(parameter) //profile picture content size
+
+
+"USEX_001": "El usuario ya existe",
+"USEX_002": "El usuario no espera la confirmación",
+"USEX_003": "Id o token no corresponde a una solicitud de confirmación del usuario",
+"USEX_004": "El correo electrónico no corresponde a una solicitud de confirmación del usuario" ,
+"USEX_005": "El token no corresponde a una solicitud de confirmación del usuario" ,
+"USEX_006": "El correo electrónico no se corresponde con un usuario" ,
+"USEX_007": "No puede deshabilitarse",
+"USEX_008": "No puedes borrarte a ti mismo",
+"USEX_009": "Se requiere correo electrónico" ,
+"USEX_010": "Se requiere contraseña",
+"USEX_011": "Error al intentar enviar el correo",
+"GNEX_001": "Se requiere modelo" ,
+
+"IMEX_001": "Se requiere una imagen",
+
+"GenericError": "Ha ocurrido un error"
