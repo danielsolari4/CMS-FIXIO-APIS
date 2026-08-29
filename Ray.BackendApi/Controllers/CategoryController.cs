@@ -91,6 +91,7 @@ namespace Ray.BackendApi.Controllers
                 return Ok();
             });
         }
+        [HttpDelete]
         [HttpPost, Route("Delete")]
         public async Task<IActionResult> Delete(DeleteCategoryDtoBindingModel categoryDto)
         {

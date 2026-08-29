@@ -87,6 +87,7 @@ namespace Ray.BackendApi.Controllers
                 });
         }
 
+        [HttpDelete]
         [HttpPost, Route("Delete")]
         public async Task<IActionResult> Delete(MenuJson menuDto)
         {

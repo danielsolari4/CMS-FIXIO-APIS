@@ -80,7 +80,8 @@ namespace Ray.BackendApi.Controllers
             return Ok();
         }
 
-        [HttpPost]
+        [HttpDelete]
+        [HttpPost, Route("Delete")]
         public async Task<IActionResult> Delete(AccessTypeDto dto)
         {
             if (!ModelState.IsValid)

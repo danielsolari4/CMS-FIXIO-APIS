@@ -106,7 +106,7 @@ namespace Ray.BackendApi.Controllers
                     user.ProfileImagePath = await ImageStoreHelper.UpdateUserProfileImage(user.ProfileImagePath, file, _appSettings.Media);
                     await UploadProfileImageToCloud(oldProfileImagePath, user.ProfileImagePath);
                     await _manager.SetProfileImagePath(user);
-                    return Ok();
+                    return Ok(user.ProfileImagePath);
                 });
         }
 
@@ -121,13 +121,14 @@ namespace Ray.BackendApi.Controllers
                 var formData = await _httpContextAccessor.HttpContext.Request.ReadFormAsync();
                 var file = formData.Files[0];
 
-                if (file == null || id == 0)
+                if (file == null)
                 {
                     ModelState.AddModelError("Image", "IMEX_001");
                     throw new ModelException(ModelState.GetErrorMessage());
                 }
 
-                var user = await _manager.GetById(id);
+                var userId = id == 0 ? GetLoggedUser().Id : id;
+                var user = await _manager.GetById(userId);
                 if (user == null)
                     return BadRequest();
 
@@ -135,7 +136,7 @@ namespace Ray.BackendApi.Controllers
                 user.ProfileImagePath = await ImageStoreHelper.UpdateUserProfileImage(user.ProfileImagePath, file, _appSettings.Media);
                 await UploadProfileImageToCloud(oldProfileImagePath, user.ProfileImagePath);
                 await _manager.SetProfileImagePath(user);
-                return Ok();
+                return Ok(user.ProfileImagePath);
             });
         }
 
@@ -189,6 +190,7 @@ namespace Ray.BackendApi.Controllers
                 });
         }
 
+        [HttpDelete]
         [HttpDelete, Route("Delete")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "HasPermissionPolicy")]
         public async Task<IActionResult> Delete(UpdateUserDtoBindingModel userDto)
