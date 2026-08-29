@@ -21,7 +21,7 @@ namespace Ray.Dtos.Factories
                 case ComponentType.Gallery: return new ComponentGalleryDto();
                 case ComponentType.Section: return new ComponentSectionDto();
                 default:
-                    return null;
+                    return new ComponentDataFactoryDto();
             }
         }
 
@@ -41,7 +41,7 @@ namespace Ray.Dtos.Factories
                 case ComponentType.Gallery: return new ComponentInstanceGalleryJson();
                 case ComponentType.Section: return new ComponentInstanceSectionJson();
                 default:
-                    return null;
+                    return new ComponentInstanceDataFactoryJson();
             }
         }
     }

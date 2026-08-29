@@ -169,10 +169,22 @@ namespace Ray.BackendApi
             app.UseRouting();
             app.UseCors("CorsPolicy");
 
+            var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
             app.UseStaticFiles(new StaticFileOptions
             {
                 FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "HtmlTemplate")),
-                RequestPath = "/HtmlTemplates"
+                RequestPath = "/HtmlTemplates",
+                OnPrepareResponse = context =>
+                {
+                    var origin = context.Context.Request.Headers["Origin"].ToString();
+                    if (!string.IsNullOrWhiteSpace(origin) && Array.IndexOf(allowedOrigins, origin) >= 0)
+                    {
+                        context.Context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+                        context.Context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+                        context.Context.Response.Headers["Vary"] = "Origin";
+                    }
+                }
             });
 
             app.UseResponseCaching();

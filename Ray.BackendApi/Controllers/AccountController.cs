@@ -392,7 +392,7 @@ namespace Ray.BackendApi.Controllers
             //UserManager.
             if (string.IsNullOrEmpty(model.UserName) || string.IsNullOrEmpty(model.Code)) return BadRequest();
 
-            var user = await _userManager.FindByEmailAsync(model.UserName);
+            var user = await FindUserByUserNameOrEmail(model.UserName);
             user.Imei = model.Code;
 
             var result = await _userManager.UpdateAsync(user);
@@ -409,7 +409,7 @@ namespace Ray.BackendApi.Controllers
             //UserManager.
             if (string.IsNullOrEmpty(model.UserName)) return BadRequest();
 
-            var user = await _userManager.FindByEmailAsync(model.UserName);
+            var user = await FindUserByUserNameOrEmail(model.UserName);
             if (user == null) return BadRequest();
             user.TwoFactorEnabled = true;
 
@@ -425,8 +425,15 @@ namespace Ray.BackendApi.Controllers
         [AllowAnonymous]
         public async Task<IActionResult>  GetTwoFactorCode(string userName)
         {
-            var user = await _userManager.FindByEmailAsync(userName);
+            var user = await FindUserByUserNameOrEmail(userName);
+            if (user == null) return BadRequest();
+
             return Ok(new { success = true, code = user.Imei });
+        }
+
+        private Task<User> FindUserByUserNameOrEmail(string userNameOrEmail)
+        {
+            return _dbContext.Users.FirstOrDefaultAsync(s => s.UserName == userNameOrEmail || s.Email == userNameOrEmail);
         }
 
 
