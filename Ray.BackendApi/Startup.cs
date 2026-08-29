@@ -29,7 +29,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Ray.Common.Authentication;
 using Ray.Utils.Logging;
 using System.Net.Http;
+using System.IO;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.FileProviders;
 
 namespace Ray.BackendApi
 {
@@ -81,13 +83,11 @@ namespace Ray.BackendApi
             services
                 .AddCors(options =>
                 {
+                    var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
                     options.AddPolicy("CorsPolicy",
                         builder => builder
-                            .WithOrigins(
-                                "https://localhost:5001",
-                                "http://localhost:5000",
-                                "https://localhost:44325",
-                                "http://localhost:19917")
+                            .WithOrigins(allowedOrigins)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials());
@@ -168,6 +168,13 @@ namespace Ray.BackendApi
 
             app.UseRouting();
             app.UseCors("CorsPolicy");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "HtmlTemplate")),
+                RequestPath = "/HtmlTemplates"
+            });
+
             app.UseResponseCaching();
             app.UseAuthentication();
             app.UseAuthorization();

@@ -117,11 +117,24 @@ namespace Ray.FrontendApi
             services
                 .AddCors(options =>
                 {
+                    var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
                     options.AddPolicy("CorsPolicy",
-                        builder => builder
-                            .WithOrigins("*")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod());
+                        builder =>
+                        {
+                            if (allowedOrigins.Length == 1 && allowedOrigins[0] == "*")
+                            {
+                                builder.AllowAnyOrigin();
+                            }
+                            else
+                            {
+                                builder.WithOrigins(allowedOrigins);
+                            }
+
+                            builder
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                        });
                 });
             services.AddRepositories();
             services.AddScoped<IMailSender, MailSender>();
