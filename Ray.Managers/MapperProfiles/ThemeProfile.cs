@@ -9,14 +9,12 @@ namespace Ray.Managers.MapperProfiles
         public ThemeProfile()
         {            
             var m1 = CreateMap<ThemeDto, Theme>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id)).PreserveLegacyUpdateBehavior("Structure", "Id");
 
             var m2 = CreateMap<Theme, ThemeDto>();
-                m2.ForAllMembers(x => x.Ignore());
                 m2.ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id)).PreserveLegacyUpdateBehavior("Structure", "Id");
         }
     }
 }

@@ -240,6 +240,47 @@ foreach ($contract in $currentContracts) {
 $sharedKeys = @($legacyByKey.Keys | Where-Object { $currentByKey.ContainsKey($_) } | Sort-Object)
 $responseMismatches = New-Object System.Collections.Generic.List[object]
 $routeMismatches = New-Object System.Collections.Generic.List[object]
+$plainTextBadRequests = New-Object System.Collections.Generic.List[object]
+$ignoredMapperProfiles = New-Object System.Collections.Generic.List[object]
+
+foreach ($pair in $ProjectPairs) {
+    $controllerDir = Join-Path $CurrentRoot $pair.CurrentControllers
+    foreach ($file in Get-ChildItem $controllerDir -Filter "*.cs" -File -Recurse) {
+        $relative = $file.FullName.Substring($CurrentRoot.Length).TrimStart("\", "/")
+        if ($relative -like "*\ExceptionController\*") {
+            continue
+        }
+
+        $content = Remove-Comments (Get-Content $file.FullName -Raw)
+        $lines = $content -split "`r?`n"
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '\bBadRequest\s*\(\s*(?:\$?"|ex\.Message|[^)]*\.Message\s*\))') {
+                $plainTextBadRequests.Add([pscustomobject]@{
+                    Project = $pair.Name
+                    File = $file.FullName
+                    Line = $i + 1
+                    Code = $lines[$i].Trim()
+                })
+            }
+        }
+    }
+}
+
+$mapperDir = Join-Path $CurrentRoot "Ray.Managers\MapperProfiles"
+if (Test-Path $mapperDir) {
+    foreach ($file in Get-ChildItem $mapperDir -Filter "*.cs" -File) {
+        $lines = Get-Content $file.FullName
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match "ForAllMembers\s*\(\s*x\s*=>\s*x\.Ignore\s*\(\s*\)\s*\)") {
+                $ignoredMapperProfiles.Add([pscustomobject]@{
+                    File = $file.FullName
+                    Line = $i + 1
+                    Code = $lines[$i].Trim()
+                })
+            }
+        }
+    }
+}
 
 foreach ($key in $sharedKeys) {
     $legacy = $legacyByKey[$key]
@@ -284,6 +325,8 @@ Write-Host "Shared actions: $($sharedKeys.Count)"
 Write-Host "Missing in current: $($missingInCurrent.Count)"
 Write-Host "Extra in current: $($extraInCurrent.Count)"
 Write-Host "Response shape mismatches: $($responseMismatches.Count)"
+Write-Host "Plain text BadRequest results: $($plainTextBadRequests.Count)"
+Write-Host "Global ignored mapper profiles: $($ignoredMapperProfiles.Count)"
 
 if ($responseMismatches.Count -gt 0) {
     Write-Host ""
@@ -298,6 +341,18 @@ if ($StrictRoutes) {
         Write-Host "Route mismatches:"
         $routeMismatches | Format-Table Project, Controller, Action, Verb, LegacyRoutes, CurrentRoutes, CurrentFile, CurrentLine -AutoSize
     }
+}
+
+if ($plainTextBadRequests.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Plain text BadRequest results:"
+    $plainTextBadRequests | Format-Table Project, File, Line, Code -AutoSize
+}
+
+if ($ignoredMapperProfiles.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Global ignored mapper profiles:"
+    $ignoredMapperProfiles | Format-Table File, Line, Code -AutoSize
 }
 
 if ($missingInCurrent.Count -gt 0) {
@@ -318,6 +373,6 @@ if ($extraInCurrent.Count -gt 0) {
     }
 }
 
-if ($responseMismatches.Count -gt 0 -or ($StrictRoutes -and $routeMismatches.Count -gt 0)) {
+if ($responseMismatches.Count -gt 0 -or $plainTextBadRequests.Count -gt 0 -or $ignoredMapperProfiles.Count -gt 0 -or ($StrictRoutes -and $routeMismatches.Count -gt 0)) {
     exit 1
 }

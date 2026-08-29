@@ -17,9 +17,8 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.Media, opt => opt.Ignore());
 
             var m1 = CreateMap<GalleryDto, Gallery>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled));
+                .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled)).PreserveLegacyUpdateBehavior("Name", "IsEnabled");
         }
     }
 }

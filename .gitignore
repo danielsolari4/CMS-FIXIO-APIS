@@ -43,6 +43,12 @@ Desktop.ini
 publish/
 artifacts/
 
+## Codex local build scratch
+.codex-build/
+.codex-obj/
+**/.codex-build/
+**/.codex-obj/
+
 ## Deploy
 .env
 deploy/

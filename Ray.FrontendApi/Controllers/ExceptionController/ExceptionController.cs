@@ -36,37 +36,37 @@ namespace Ray.FrontendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("Se ha producido un error al guardar, intentelo de nuevo - id:" + ex.Message);
+                return LegacyBadRequest("Se ha producido un error al guardar, intentelo de nuevo - id:" + ex.Message);
             }
             catch (AlreadyExistsException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("La entidad " + ex.Message + " ya existe en el sistema");
+                return LegacyBadRequest("La entidad " + ex.Message + " ya existe en el sistema");
             }
             catch (InUseException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("El valor del campo " + ex.Message + " ya está en uso");
+                return LegacyBadRequest("El valor del campo " + ex.Message + " ya está en uso");
             }
             catch (ConfigurationException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("Error de configuración " + ex.Message);
+                return LegacyBadRequest("Error de configuración " + ex.Message);
             }
             catch (ArgumentNullException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest($"El valor '{ex.ParamName}' no puede estar vacío o en blanco");
+                return LegacyBadRequest($"El valor '{ex.ParamName}' no puede estar vacío o en blanco");
             }
             catch (ArgumentException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("Complete todos los campos requeridos");
+                return LegacyBadRequest("Complete todos los campos requeridos");
             }
             //catch (DbUpdateException ex)
             //{
@@ -78,7 +78,7 @@ namespace Ray.FrontendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest(ex.Message);
+                return LegacyBadRequest(ex.Message);
             }
         }
 
@@ -127,6 +127,11 @@ namespace Ray.FrontendApi.Controllers.ExceptionController
         protected virtual void CatchError(string mes)
         {
             ModelState.AddModelError("", mes);
+        }
+
+        protected IActionResult LegacyBadRequest(string message)
+        {
+            return BadRequest(new { Message = message });
         }
 
         private void LogError(Exception exceptionMessage)

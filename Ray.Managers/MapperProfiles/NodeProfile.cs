@@ -26,7 +26,6 @@ namespace Ray.Managers.MapperProfiles
             CreateMap<NodeContent, NodeContentDto>();
 
             var m1 = CreateMap<NodeDto, Node>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(x => x.Order, opt => opt.MapFrom(src => src.Order))
                 .ForMember(x => x.IsPrint, opt => opt.MapFrom(src => src.IsPrint))
@@ -40,12 +39,11 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.Keywords, opt => opt.MapFrom(src => src.Keywords))
                 .ForMember(x => x.OGTitle, opt => opt.MapFrom(src => src.OGTitle))
                 .ForMember(x => x.NewSourceId, opt => opt.MapFrom(src => src.NewSourceId))
-                .ForMember(x => x.OGDescription, opt => opt.MapFrom(src => src.OGDescription));
+                .ForMember(x => x.OGDescription, opt => opt.MapFrom(src => src.OGDescription)).PreserveLegacyUpdateBehavior("Description", "Order", "IsPrint", "IsDiagrammable", "IsEnabled", "IsPublished", "SeoDescription", "SeoTitle", "SeoImage", "Keywords", "OGTitle", "NewSourceId", "OGDescription");
 
 
             var m2 = CreateMap<NodeContentDto, NodeContent>();
-                m2.ForAllMembers(x => x.Ignore());
-                m2.ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title));
+                m2.ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title)).PreserveLegacyUpdateBehavior("Title");
         }
     }
 

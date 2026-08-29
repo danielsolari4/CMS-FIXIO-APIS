@@ -21,7 +21,6 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.SocialNetwork, opt => opt.Ignore());
 
             var m1 = CreateMap<NewsDto, News>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.ViewsCount, opt => opt.MapFrom(src => src.ViewsCount))
                 .ForMember(x => x.WasPublished, opt => opt.MapFrom(src => src.WasPublished))
                 .ForMember(x => x.PublicationUser, opt => opt.MapFrom(src => src.PublicationUser))
@@ -35,10 +34,9 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.ExpirationDate, opt => opt.MapFrom(src => src.ExpirationDate))
                 .ForMember(x => x.EditorComments, opt => opt.MapFrom(src => src.EditorComments))
                 .ForMember(x => x.NewsSourceNewsId, opt => opt.MapFrom(src => src.NewsSourceNewsId))
-                .ForMember(x => x.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate));
+                .ForMember(x => x.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate)).PreserveLegacyUpdateBehavior("ViewsCount", "WasPublished", "PublicationUser", "PublicationDate", "VotesCount", "CommentsCount", "Url", "ShortUrl", "DataExtension", "IsEnabled", "ExpirationDate", "EditorComments", "NewsSourceNewsId", "IsPrivate");
 
             var m2 = CreateMap<PageContentDto, PageContent>();
-                m2.ForAllMembers(x => x.Ignore());
                 m2.ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title))
                 .ForMember(x => x.SocialNetworkTitle, opt => opt.MapFrom(src => src.SocialNetworkTitle))
                 .ForMember(x => x.Description, opt => opt.MapFrom(src => src.Description))
@@ -51,7 +49,7 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.MetaKeywords, opt => opt.MapFrom(src => src.MetaKeywords))
                 .ForMember(x => x.Introduction, opt => opt.MapFrom(src => src.Introduction))
                 .ForMember(x => x.Volanta, opt => opt.MapFrom(src => src.Volanta))
-                .ForMember(x => x.MobileTitle, opt => opt.MapFrom(src => src.MobileTitle));
+                .ForMember(x => x.MobileTitle, opt => opt.MapFrom(src => src.MobileTitle)).PreserveLegacyUpdateBehavior("Title", "SocialNetworkTitle", "Description", "LanguageId", "TemplateId", "Keywords", "Content", "MetaAuthor", "MetaDescription", "MetaKeywords", "Introduction", "Volanta", "MobileTitle");
         }
     }
 }

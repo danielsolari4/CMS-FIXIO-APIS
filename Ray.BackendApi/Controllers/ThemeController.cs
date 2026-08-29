@@ -71,7 +71,7 @@ namespace Ray.BackendApi.Controllers
         {
             if (data == null)
             {
-                return BadRequest("Model Required");
+                return LegacyBadRequest("Model Required");
             }
             else
             {

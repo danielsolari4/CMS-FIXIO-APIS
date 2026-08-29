@@ -9,10 +9,9 @@ namespace Ray.Managers.MapperProfiles
         public TemplateProfile()
         {
             var m1 = CreateMap<Template, TemplateDto>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(x => x.Class, opt => opt.MapFrom(src => src.Class))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id)).PreserveLegacyUpdateBehavior("Name", "Class", "Id");
         }
     }
 

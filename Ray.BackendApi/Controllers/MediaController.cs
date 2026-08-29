@@ -93,7 +93,7 @@ namespace Ray.BackendApi.Controllers
             return await TryJsonResultAsync(async () =>
             {
                 if (mediaIds == null || !mediaIds.Any())
-                    return BadRequest("No media IDs provided.");
+                    return LegacyBadRequest("No media IDs provided.");
 
                 var usedMediaIds = await _manager.GetUsedMediaIdsAsync(mediaIds);
                 return Ok(CMSResponse(usedMediaIds));
@@ -475,7 +475,7 @@ namespace Ray.BackendApi.Controllers
                                         else
                                         {
                                             media = obj.thumbnails.data.FirstOrDefault();
-                                            if (media == null) return BadRequest("content");
+                                            if (media == null) return LegacyBadRequest("content");
                                             var data = FormUpload.DownloadData(media.uri);
                                             postParameters.Add("MediaUrl", string.Format(_appSettings.Media.Facebook.EmbedUrl, HttpUtility.UrlEncode(mediaDto.MediaUrl)));
                                             postParameters.Add("Image[]", new FormUpload.FileParameter(data, mediaDto.Title + ".jpg", "image/jpeg"));

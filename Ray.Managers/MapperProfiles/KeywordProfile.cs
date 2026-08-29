@@ -13,8 +13,7 @@ namespace Ray.Managers.MapperProfiles
             CreateMap<Keyword, DeleteKeywordDtoBindingModel>();
 
             var m1 = CreateMap<KeywordDto, Keyword>();
-                m1.ForAllMembers(x => x.Ignore());
-                m1.ForMember(x => x.Name, opt => opt.MapFrom(src => src.Name));
+                m1.ForMember(x => x.Name, opt => opt.MapFrom(src => src.Name)).PreserveLegacyUpdateBehavior("Name");
         }
     }
 }

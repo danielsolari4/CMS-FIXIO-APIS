@@ -28,9 +28,8 @@ namespace Ray.Managers.MapperProfiles
                .ForMember(x => x.CategoryNode, opt => opt.Ignore());
 
             var m1 = CreateMap<CategoryDto, Category>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled));
+                .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled)).PreserveLegacyUpdateBehavior("Name", "IsEnabled");
         }
     }
 

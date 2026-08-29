@@ -9,16 +9,14 @@ namespace Ray.Managers.MapperProfiles
         public URLRedirectProfile()
         {            
             var m1 = CreateMap<URLRedirectDto, URLRedirect>();
-                m1.ForAllMembers(x => x.Ignore());
                 m1.ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
                 .ForMember(x => x.To, opt => opt.MapFrom(src => src.To))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id)).PreserveLegacyUpdateBehavior("From", "To", "Id");
 
             var m2 = CreateMap<URLRedirect, URLRedirectDto>();
-                m2.ForAllMembers(x => x.Ignore());
                 m2.ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
                 .ForMember(x => x.To, opt => opt.MapFrom(src => src.To))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id)).PreserveLegacyUpdateBehavior("From", "To", "Id");
         }
     }
 }

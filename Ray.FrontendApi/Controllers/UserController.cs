@@ -71,7 +71,7 @@ namespace Ray.FrontendApi.Controllers
             }
             catch (System.Exception ex)
             {
-                return BadRequest(ex.Message);
+                return LegacyBadRequest(ex.Message);
             }
         }
 

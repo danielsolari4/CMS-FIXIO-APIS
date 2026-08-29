@@ -23,37 +23,37 @@ namespace Ray.BackendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("ENEX_001-" + ex.Message);
+                return LegacyBadRequest("ENEX_001-" + ex.Message);
             }
             catch (AlreadyExistsException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("AEEX_001-" + ex.Message);
+                return LegacyBadRequest("AEEX_001-" + ex.Message);
             }
             catch (InUseException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("IUEX_001-" + ex.Message);
+                return LegacyBadRequest("IUEX_001-" + ex.Message);
             }
             catch (ConfigurationException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("CNEX_001-" + ex.Message);
+                return LegacyBadRequest("CNEX_001-" + ex.Message);
             }
             catch (ArgumentNullException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("ANEX_001-" + ex.Message);
+                return LegacyBadRequest("ANEX_001-" + ex.Message);
             }
             catch (ArgumentException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("AREX_001");
+                return LegacyBadRequest("AREX_001");
             }
             //catch (DbUpdateException ex)
             //{
@@ -65,19 +65,19 @@ namespace Ray.BackendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("NFEX_001-" + ex.Message);
+                return LegacyBadRequest("NFEX_001-" + ex.Message);
             }
             catch (DeleteException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("DLEX_001-" + ex.Message);
+                return LegacyBadRequest("DLEX_001-" + ex.Message);
             }
             catch (Exception ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest(ex.Message);
+                return LegacyBadRequest(ex.Message);
             }
         }
 
@@ -93,37 +93,37 @@ namespace Ray.BackendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("ENEX_001-" + ex.Message);
+                return LegacyBadRequest("ENEX_001-" + ex.Message);
             }
             catch (AlreadyExistsException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("AEEX_001-" + ex.Message);
+                return LegacyBadRequest("AEEX_001-" + ex.Message);
             }
             catch (InUseException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("IUEX_001-" + ex.Message);
+                return LegacyBadRequest("IUEX_001-" + ex.Message);
             }
             catch (ConfigurationException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("CNEX_001-" + ex.Message);
+                return LegacyBadRequest("CNEX_001-" + ex.Message);
             }
             catch (ArgumentNullException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("ANEX_001-" + ex.Message);
+                return LegacyBadRequest("ANEX_001-" + ex.Message);
             }
             catch (ArgumentException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("AREX_001");
+                return LegacyBadRequest("AREX_001");
             }
             //catch (DbUpdateException ex)
             //{
@@ -135,19 +135,19 @@ namespace Ray.BackendApi.Controllers.ExceptionController
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("NFEX_001-" + ex.Message);
+                return LegacyBadRequest("NFEX_001-" + ex.Message);
             }
             catch (DeleteException ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest("DLEX_001-" + ex.Message);
+                return LegacyBadRequest("DLEX_001-" + ex.Message);
             }
             catch (Exception ex)
             {
                 LogError(ex);
                 CatchError(ex.Message);
-                return BadRequest(ex.Message);
+                return LegacyBadRequest(ex.Message);
             }
         }
 
@@ -196,6 +196,11 @@ namespace Ray.BackendApi.Controllers.ExceptionController
         protected virtual void CatchError(string mes)
         {
             ModelState.AddModelError("", mes);
+        }
+
+        protected IActionResult LegacyBadRequest(string message)
+        {
+            return BadRequest(new { Message = message });
         }
 
 
