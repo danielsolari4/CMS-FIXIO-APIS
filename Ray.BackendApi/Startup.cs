@@ -1,37 +1,37 @@
 using System;
+using System.IO;
+using System.Net.Http;
 using System.Text;
+using LazyCache.Providers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Ray.BackendApi.Attributes;
+using Ray.BackendApi.CustomTokenProviders;
+using Ray.Common.Authentication;
 using Ray.Dtos.Configuration;
 using Ray.Managers.Implementation;
 using Ray.Model.NewContext;
 using Ray.Model.NewContext.Entities;
 using Ray.Repositories.Implementation;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
-using Ray.BackendApi.CustomTokenProviders;
-using Ray.Utils.Mail;
-using LazyCache.Providers;
-using Ray.BackendApi.Attributes;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Ray.Common.Authentication;
 using Ray.Utils.Logging;
-using System.Net.Http;
-using System.IO;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.FileProviders;
+using Ray.Utils.Mail;
 
 namespace Ray.BackendApi
 {
@@ -39,7 +39,7 @@ namespace Ray.BackendApi
     {
         private const string protectorName = "rayMedia";
         private static System.Timers.Timer SyncLayoutInstancesTimer;
-      
+
         public static AppSettings AppSettings;
         public Startup(IConfiguration configuration)
         {
