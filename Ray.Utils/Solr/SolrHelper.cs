@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Ray.Dtos.Configuration;
 using Ray.Utils.Configuration;
 
@@ -11,6 +12,8 @@ namespace Ray.Utils.Solr
 {
     public static class SolrHelper
     {
+        private static readonly HttpClient StatusClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
         public static async Task<dynamic> ExecuteQuery(SolrCore core, string q, SolrConfig config)
         {
             var solrCoreUrl = GetCoreUrl(core, config);
@@ -87,6 +90,64 @@ namespace Ray.Utils.Solr
             }
 
             return false;
+        }
+
+        private const int DefaultImportTimeoutMs = 20000;
+        private const int DefaultPollMs = 250;
+
+        public static async Task<bool> DataImportAndWait(SolrCore core, SolrConfig config, bool isFull = false, int timeoutMs = DefaultImportTimeoutMs)
+        {
+            var solrCoreUrl = GetCoreUrl(core, config);
+            if (string.IsNullOrWhiteSpace(solrCoreUrl))
+                return false;
+
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+            if (!await WaitForImportIdle(core, config, RemainingMs(deadline)))
+                return false;
+
+            var imported = await DataImport(core, config, isFull);
+            if (imported != true)
+                return false;
+
+            return await WaitForImportIdle(core, config, RemainingMs(deadline));
+        }
+
+        public static async Task<bool> WaitForImportIdle(SolrCore core, SolrConfig config, int timeoutMs = DefaultImportTimeoutMs, int pollMs = DefaultPollMs)
+        {
+            var solrCoreUrl = GetCoreUrl(core, config);
+            if (string.IsNullOrWhiteSpace(solrCoreUrl))
+                return false;
+
+            var address = string.Format("{0}dataimport?command=status&wt=json", solrCoreUrl);
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+            while (true)
+            {
+                try
+                {
+                    var body = await StatusClient.GetStringAsync(address);
+                    var status = JObject.Parse(body).Value<string>("status");
+
+                    if (!string.Equals(status, "busy", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+                catch (System.Exception)
+                {
+                    return false;
+                }
+
+                if (DateTime.UtcNow >= deadline)
+                    return false;
+
+                await Task.Delay(Math.Min(pollMs, Math.Max(1, RemainingMs(deadline))));
+            }
+        }
+
+        private static int RemainingMs(DateTime deadline)
+        {
+            var remaining = (deadline - DateTime.UtcNow).TotalMilliseconds;
+            return remaining <= 0 ? 0 : (int)remaining;
         }
 
         public static async Task<dynamic> DeleteDocumentById(SolrCore core, int id, SolrConfig config)

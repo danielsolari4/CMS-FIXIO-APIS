@@ -143,6 +143,10 @@ namespace Ray.Dtos.JsonEntities
     {
     }
 
+    public class ComponentInstanceShortsJson : ComponentInstanceBaseJson
+    {
+    }
+
     public class ComponentInstanceLastNewsJson : ComponentInstanceBaseJson
     {
         public string Title { get; set; }

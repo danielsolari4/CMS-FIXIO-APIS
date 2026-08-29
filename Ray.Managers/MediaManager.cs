@@ -35,8 +35,9 @@ namespace Ray.Managers
         private readonly IGalleryRepository _galleryRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly AppSettings _appSettings;
+        private readonly IAmazonS3Manager _amazonS3Manager;
 
-        public MediaManager(IMediaRepository repository, IKeywordRepository keywordRepository, IGalleryRepository galleryRepository, ICategoryRepository categoryRepository, IAssetMediaRepository assetMediaRepository, AppSettings appSettings)
+        public MediaManager(IMediaRepository repository, IKeywordRepository keywordRepository, IGalleryRepository galleryRepository, ICategoryRepository categoryRepository, IAssetMediaRepository assetMediaRepository, AppSettings appSettings, IAmazonS3Manager amazonS3Manager)
         {
             _repository = repository;
             _keywordRepository = keywordRepository;
@@ -44,6 +45,7 @@ namespace Ray.Managers
             _categoryRepository = categoryRepository;
             _assetMediaRepository = assetMediaRepository;
             _appSettings = appSettings;
+            _amazonS3Manager = amazonS3Manager;
         }
 
         public async Task<ICollection<MediaDto>> AddMigration(ICollection<MediaDto> dto)
@@ -189,12 +191,51 @@ namespace Ray.Managers
             if (media == null)
                 throw new ArgumentNullException("media");
 
+            await DeleteMediaFilesFromS3(media);
+
             // Clears Media-Keyword & Media-Gallery relations
             media.MediaKeywords.Clear();
             media.MediaGalleries.Clear();
 
             await _repository.Delete(media);
             await SolrHelper.DeleteDocumentById(SolrCore.MEDIA, media.Id, _appSettings.Solr);
+        }
+
+        private async Task DeleteMediaFilesFromS3(Media media)
+        {
+            if (string.IsNullOrWhiteSpace(_appSettings.AmazonS3?.BucketName))
+                return;
+
+            var keys = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(media.SourcePath))
+                keys.Add(media.SourcePath);
+
+            if (!string.IsNullOrWhiteSpace(media.SizesPaths))
+            {
+                try
+                {
+                    var sizes = JsonConvert.DeserializeObject<Dictionary<string, string>>(media.SizesPaths);
+                    if (sizes != null)
+                        keys.AddRange(sizes.Values.Where(v => !string.IsNullOrWhiteSpace(v)));
+                }
+                catch
+                {
+                    // Keep deleting the original even if SizesPaths is malformed.
+                }
+            }
+
+            foreach (var key in keys.Distinct())
+            {
+                try
+                {
+                    await _amazonS3Manager.DeleteOneAsync(key);
+                }
+                catch (Exception)
+                {
+                    // A missing S3 object must not block deleting the database record.
+                }
+            }
         }
 
         public async Task UpdateCounts(CountDto dto)

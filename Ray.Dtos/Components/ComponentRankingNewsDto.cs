@@ -14,8 +14,9 @@ namespace Ray.Dtos.Components
             var html = builder.Html;
 
             html = html.ReplaceByPropertyName("component.Title", Title);
-            //html = html.ReplaceByPropertyName("component.NodeId", NodeId.ToString());
+            html = html.ReplaceByPropertyName("component.NodeId", NodeId.ToString());
             html = html.ReplaceByPropertyName("component.css", Css);
+            html = html.ReplaceByPropertyName("component.Css", Css);
 
             var titleSection = builder.GetParseTitleHtml(this.Badge, "component.badge");
             return html.ReplaceByHtmlName("titleHtml", titleSection);

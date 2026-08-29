@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ray.Dtos;
@@ -43,6 +44,8 @@ namespace Ray.Managers
         Task<CacheInvalidationResult> InvalidateNewsNow(int newsId, NewsCacheSnapshot previous = null, string reason = null);
         Task<CacheInvalidationResult> InvalidateLayoutNow(int nodeId, string reason = null);
         Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, string reason = null);
+        Task<int> ProcessQueue(int maxItems = 25);
+        Task<int> RecoverQueue();
     }
 
     public class CacheInvalidationManager : ICacheInvalidationManager
@@ -54,18 +57,24 @@ namespace Ray.Managers
         private readonly IAssetRepository _assets;
         private readonly INodeRepository _nodes;
         private readonly ILayoutInstanceRepository _layoutInstances;
+        private readonly ICacheInvalidationQueueRepository _queue;
         private readonly AppSettings _appSettings;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public CacheInvalidationManager(
             IAssetRepository assets,
             INodeRepository nodes,
             ILayoutInstanceRepository layoutInstances,
-            AppSettings appSettings)
+            ICacheInvalidationQueueRepository queue,
+            AppSettings appSettings,
+            IServiceScopeFactory scopeFactory)
         {
             _assets = assets;
             _nodes = nodes;
             _layoutInstances = layoutInstances;
+            _queue = queue;
             _appSettings = appSettings;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<NewsCacheSnapshot> CaptureNewsSnapshot(int newsId)
@@ -83,7 +92,13 @@ namespace Ray.Managers
 
         public void InvalidateNews(int newsId, NewsCacheSnapshot previous = null, string reason = null)
         {
-            RunDetached(() => InvalidateNewsNow(newsId, previous, reason ?? $"news:{newsId}"));
+            Enqueue(new CacheInvalidationQueueItem
+            {
+                Kind = KindNews,
+                NewsId = newsId,
+                PreviousJson = previous == null ? null : JsonConvert.SerializeObject(previous),
+                Reason = reason ?? $"news:{newsId}"
+            });
         }
 
         public void InvalidateNews(IEnumerable<int> newsIds, string reason = null)
@@ -92,29 +107,41 @@ namespace Ray.Managers
             if (ids.Count == 0)
                 return;
 
-            RunDetached(async () =>
+            Enqueue(new CacheInvalidationQueueItem
             {
-                var paths = new List<string>();
-                foreach (var id in ids)
-                    paths.AddRange(await BuildNewsPaths(id, null));
-
-                return await FrontendCacheClient.Invalidate(paths, _appSettings, reason ?? $"news-batch:{ids.Count}", CacheInvalidationKind.News);
+                Kind = KindNewsBatch,
+                PathsJson = JsonConvert.SerializeObject(ids),
+                Reason = reason ?? $"news-batch:{ids.Count}"
             });
         }
 
         public void InvalidateLayout(int nodeId, string reason = null)
         {
-            RunDetached(() => InvalidateLayoutNow(nodeId, reason ?? $"layout:{nodeId}"));
+            Enqueue(new CacheInvalidationQueueItem
+            {
+                Kind = KindLayout,
+                NodeId = nodeId,
+                Reason = reason ?? $"layout:{nodeId}"
+            });
         }
 
         public void InvalidatePaths(IEnumerable<string> paths, string reason = null)
         {
-            RunDetached(() => InvalidatePathsNow(paths, reason));
+            var snapshot = paths == null ? new List<string>() : paths.ToList();
+            if (snapshot.Count == 0)
+                return;
+
+            Enqueue(new CacheInvalidationQueueItem
+            {
+                Kind = KindPaths,
+                PathsJson = JsonConvert.SerializeObject(snapshot),
+                Reason = reason ?? "manual paths"
+            });
         }
 
         public async Task<CacheInvalidationResult> InvalidateNewsNow(int newsId, NewsCacheSnapshot previous = null, string reason = null)
         {
-            await SolrHelper.DataImport(SolrCore.NEWS, _appSettings.Solr);
+            await SolrHelper.DataImportAndWait(SolrCore.NEWS, _appSettings.Solr);
             var paths = await BuildNewsPaths(newsId, previous);
             return await FrontendCacheClient.Invalidate(paths, _appSettings, reason ?? $"news:{newsId}", CacheInvalidationKind.News);
         }
@@ -383,19 +410,237 @@ namespace Ray.Managers
             }
         }
 
-        private static void RunDetached(Func<Task<CacheInvalidationResult>> work)
+        private const string KindNews = "News";
+        private const string KindNewsBatch = "NewsBatch";
+        private const string KindLayout = "Layout";
+        private const string KindPaths = "Paths";
+
+        private static readonly object SchemaLock = new object();
+        private static bool _schemaReady;
+        private static DateTime _schemaRetryAfterUtc = DateTime.MinValue;
+        private static readonly string WorkerId = BuildWorkerId();
+
+        private void Enqueue(CacheInvalidationQueueItem item)
+        {
+            var persisted = false;
+
+            try
+            {
+                if (EnsureSchema(_queue))
+                {
+                    _queue.Enqueue(item);
+                    persisted = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                CMSLogger.Error($"[cache-invalidation] enqueue failed ({item.Kind} {item.Reason}): {ex.Message}");
+            }
+
+            if (persisted)
+            {
+                RunDetached(manager => manager.ProcessQueue());
+                return;
+            }
+
+            CMSLogger.Warn($"[cache-invalidation] queue unavailable, running in memory: {item.Reason}");
+            RunDetached(manager => ((CacheInvalidationManager)manager).Execute(item));
+        }
+
+        public async Task<int> ProcessQueue(int maxItems = 25)
+        {
+            var processed = 0;
+
+            try
+            {
+                if (!EnsureSchema(_queue))
+                    return 0;
+
+                var items = await _queue.Claim(maxItems, WorkerId);
+
+                foreach (var item in items)
+                {
+                    try
+                    {
+                        var result = await Execute(item);
+
+                        if (result != null && result.Success)
+                        {
+                            await _queue.MarkDone(item.Id);
+                            processed++;
+                        }
+                        else
+                        {
+                            await Reschedule(_queue, item, DescribeFailure(result));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await Reschedule(_queue, item, ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CMSLogger.Error($"[cache-invalidation] queue processing failed: {ex.Message}");
+            }
+
+            return processed;
+        }
+
+        public async Task<int> RecoverQueue()
+        {
+            try
+            {
+                if (!EnsureSchema(_queue))
+                    return 0;
+
+                var stuckMinutes = GetIntSetting("Cache.Invalidation.Queue.StuckMinutes", 10);
+                var released = await _queue.ReleaseStuck(TimeSpan.FromMinutes(stuckMinutes));
+
+                if (released > 0)
+                    CMSLogger.Warn($"[cache-invalidation] {released} stuck item(s) returned to Pending");
+
+                var retentionDays = GetIntSetting("Cache.Invalidation.Queue.RetentionDays", 7);
+                await _queue.PurgeCompleted(TimeSpan.FromDays(retentionDays));
+
+                return released;
+            }
+            catch (Exception ex)
+            {
+                CMSLogger.Error($"[cache-invalidation] queue recovery failed: {ex.Message}");
+                return 0;
+            }
+        }
+
+        private async Task<CacheInvalidationResult> Execute(CacheInvalidationQueueItem item)
+        {
+            switch (item.Kind)
+            {
+                case KindNews:
+                    if (!item.NewsId.HasValue || item.NewsId.Value <= 0)
+                        throw new InvalidOperationException($"Item {item.Id} without a valid NewsId");
+
+                    var previous = string.IsNullOrWhiteSpace(item.PreviousJson)
+                        ? null
+                        : JsonConvert.DeserializeObject<NewsCacheSnapshot>(item.PreviousJson);
+
+                    return await InvalidateNewsNow(item.NewsId.Value, previous, item.Reason);
+
+                case KindNewsBatch:
+                    var ids = JsonConvert.DeserializeObject<List<int>>(item.PathsJson) ?? new List<int>();
+                    await SolrHelper.DataImportAndWait(SolrCore.NEWS, _appSettings.Solr);
+
+                    var paths = new List<string>();
+                    foreach (var id in ids)
+                        paths.AddRange(await BuildNewsPaths(id, null));
+
+                    return await FrontendCacheClient.Invalidate(paths, _appSettings, item.Reason, CacheInvalidationKind.News);
+
+                case KindLayout:
+                    if (!item.NodeId.HasValue || item.NodeId.Value <= 0)
+                        throw new InvalidOperationException($"Item {item.Id} without a valid NodeId");
+
+                    return await InvalidateLayoutNow(item.NodeId.Value, item.Reason);
+
+                case KindPaths:
+                    return await InvalidatePathsNow(JsonConvert.DeserializeObject<List<string>>(item.PathsJson), item.Reason);
+
+                default:
+                    throw new InvalidOperationException($"Unknown cache invalidation kind: {item.Kind}");
+            }
+        }
+
+        private static async Task Reschedule(ICacheInvalidationQueueRepository queue, CacheInvalidationQueueItem item, string error)
+        {
+            var maxAttempts = Math.Max(1, GetIntSetting("Cache.Invalidation.Queue.MaxAttempts", 5));
+
+            if (item.Attempts >= maxAttempts)
+            {
+                CMSLogger.Error($"[cache-invalidation] item {item.Id} ({item.Reason}) dead-lettered after {item.Attempts} attempts: {error}");
+                await queue.MarkDeadLetter(item.Id, error);
+                return;
+            }
+
+            var minutes = Math.Min(30, Math.Pow(2, Math.Max(0, item.Attempts - 1)));
+            await queue.MarkRetry(item.Id, error, DateTime.UtcNow.AddMinutes(minutes));
+        }
+
+        private static string DescribeFailure(CacheInvalidationResult result)
+        {
+            if (result == null)
+                return "no result";
+
+            if (result.Instances.Count == 0)
+                return "no frontend instances contacted";
+
+            return string.Join(" | ", result.Instances
+                .Where(x => !x.Success)
+                .Select(x => $"{x.Url} -> {x.StatusCode} {x.Error}"));
+        }
+
+        private static bool EnsureSchema(ICacheInvalidationQueueRepository queue)
+        {
+            lock (SchemaLock)
+            {
+                if (_schemaReady)
+                    return true;
+
+                if (DateTime.UtcNow < _schemaRetryAfterUtc)
+                    return false;
+
+                try
+                {
+                    queue.EnsureSchema();
+                    _schemaReady = true;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    var retryMinutes = GetIntSetting("Cache.Invalidation.Queue.SchemaRetryMinutes", 5);
+                    _schemaRetryAfterUtc = DateTime.UtcNow.AddMinutes(retryMinutes);
+
+                    CMSLogger.Error($"[cache-invalidation] schema preparation failed for {CacheInvalidationQueueRepository.TableName} (retry in {retryMinutes} min): {ex.Message}");
+                    return false;
+                }
+            }
+        }
+
+        private static string BuildWorkerId()
+        {
+            try
+            {
+                return $"{Environment.MachineName}/{System.Diagnostics.Process.GetCurrentProcess().Id}";
+            }
+            catch (Exception)
+            {
+                return "unknown";
+            }
+        }
+
+        private void RunDetached(Func<ICacheInvalidationManager, Task> work)
         {
             Task.Run(async () =>
             {
                 try
                 {
-                    await work();
+                    using var scope = _scopeFactory.CreateScope();
+                    var manager = scope.ServiceProvider.GetRequiredService<ICacheInvalidationManager>();
+                    await work(manager);
                 }
                 catch (Exception ex)
                 {
                     CMSLogger.Error($"[cache-invalidation] background work failed: {ex}");
                 }
             });
+        }
+
+        private static int GetIntSetting(string key, int defaultValue)
+        {
+            var value = Environment.GetEnvironmentVariable(key)
+                ?? Environment.GetEnvironmentVariable(key.Replace(".", "__"));
+
+            return int.TryParse(value, out var parsed) ? parsed : defaultValue;
         }
     }
 }

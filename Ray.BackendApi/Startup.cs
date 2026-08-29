@@ -24,6 +24,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Ray.BackendApi.Attributes;
 using Ray.BackendApi.CustomTokenProviders;
+using Ray.BackendApi.Services;
 using Ray.Common.Authentication;
 using Ray.Dtos.Configuration;
 using Ray.Managers.Implementation;
@@ -149,6 +150,7 @@ namespace Ray.BackendApi
                     };
                 });
             services.AddRepositories();
+            services.AddHostedService<CacheInvalidationQueueHostedService>();
 
             services.AddScoped<ICurrentUserService, UserService>();
             services.AddScoped<IMailSender, MailSender>();

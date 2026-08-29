@@ -45,6 +45,7 @@ namespace Ray.Dtos
     public class ImportNewsDtoBindingModel : CreateNewsDtoBindingModel
     {
         public string ImportImageUrl { get; set; }
+        public string PhotoName { get; set; }
         public List<ImportImage> ImportImages { get; set; }
     }
 

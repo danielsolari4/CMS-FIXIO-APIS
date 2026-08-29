@@ -40,6 +40,7 @@ namespace Ray.Repositories.Implementation
             services.AddScoped<IPrintEditionNewRepository,PrintEditionNewRepository>();
             services.AddScoped<IProgramGalleryRepository,ProgramGalleryRepository>();
             services.AddScoped<ISettingsRepository, SettingsRepository>();
+            services.AddScoped<ICacheInvalidationQueueRepository, CacheInvalidationQueueRepository>();
 
 
             //services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));

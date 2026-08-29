@@ -8,8 +8,8 @@ namespace Ray.Repositories
 {
     public interface IAssetRepository : IAsyncRepository<Asset>
     {
-        //System.Threading.Tasks.Task<ICollection<News>> AddImportAsync(ICollection<News> news);
-        //System.Threading.Tasks.Task<ICollection<News>> UpdateImportAsync(ICollection<News> news);
+        System.Threading.Tasks.Task<ICollection<News>> AddImportAsync(ICollection<News> news);
+        System.Threading.Tasks.Task<ICollection<Asset>> UpdateImportAsync(ICollection<Asset> news);
     }
 
     public class AssetRepository : BaseAsyncRepository<Asset>, IAssetRepository
@@ -20,65 +20,59 @@ namespace Ray.Repositories
             Set = UnitOfWork.Context.Assets;
         }
 
-        //public async System.Threading.Tasks.Task<ICollection<News>> AddImportAsync(ICollection<News> news)
-        //{
-        //    //await UnitOfWork.Context.SaveChangesAsync();
-        //    //UnitOfWork.Context = new ModelContext();
-        //    //UnitOfWork.Context.Configuration.AutoDetectChangesEnabled = false;
+        public async System.Threading.Tasks.Task<ICollection<News>> AddImportAsync(ICollection<News> news)
+        {
+            UnitOfWork.Context.ChangeTracker.AutoDetectChangesEnabled = false;
 
-        //    foreach (var item in news)
-        //    {
-        //        var savedEntity = Set.Add(item);
-        //    }
-        //    //var savedEntity = Set.AddRange(news);
-        //    UnitOfWork.Context.ChangeTracker.DetectChanges();
-        //    try
-        //    {
-        //        var res = await UnitOfWork.Context.SaveChangesAsync(CancellationToken.None);
-        //    }
-        //    //TODO: ver este  catch
-        //    //catch (DbEntityValidationException e)
-        //    //{
-        //    //    throw e;
-        //    //}
-        //    catch (Exception)
-        //    {
-        //        throw;
-        //    }
+            foreach (var item in news)
+            {
+                Set.Add(item);
+            }
 
-        //    return news;
-        //}
+            UnitOfWork.Context.ChangeTracker.DetectChanges();
 
-        //public async System.Threading.Tasks.Task<ICollection<News>> UpdateImportAsync(ICollection<News> news)
-        //{
-        //    //UnitOfWork.Context.Configuration.AutoDetectChangesEnabled = false;
+            try
+            {
+                await UnitOfWork.Context.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                UnitOfWork.Context.ChangeTracker.AutoDetectChangesEnabled = true;
+            }
 
-        //    foreach (var item in news)
-        //    {
-        //        UnitOfWork.Context.Entry(item).State = EntityState.Modified;
-        //    }
+            return news;
+        }
 
-        //    //UnitOfWork.Context.Configuration.AutoDetectChangesEnabled = true;
-        //    try
-        //    {
-        //        await UnitOfWork.Context.SaveChangesAsync(CancellationToken.None);
-        //    }
-        //    //TODO: ver este catch
-        //    //catch (DbEntityValidationException e)
-        //    //{
-        //    //    throw e;
-        //    //}
-        //    catch (Exception)
-        //    {
-        //        throw;
-        //    }
-        //    finally
-        //    {
-        //        if (UnitOfWork.Context != null)
-        //            UnitOfWork.Dispose();
-        //    }
+        public async System.Threading.Tasks.Task<ICollection<Asset>> UpdateImportAsync(ICollection<Asset> news)
+        {
+            UnitOfWork.Context.ChangeTracker.AutoDetectChangesEnabled = false;
 
-        //    return news;
-        //}
+            foreach (var item in news)
+            {
+                UnitOfWork.Context.Entry(item).State = EntityState.Modified;
+            }
+
+            UnitOfWork.Context.ChangeTracker.AutoDetectChangesEnabled = true;
+
+            try
+            {
+                await UnitOfWork.Context.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                if (UnitOfWork.Context != null)
+                    UnitOfWork.Dispose();
+            }
+
+            return news;
+        }
     }
 }

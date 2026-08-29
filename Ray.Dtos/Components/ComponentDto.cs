@@ -15,7 +15,8 @@ namespace Ray.Dtos.Components
         FrontCoverPrintEdition = 7,
         FeaturedNews = 8,
         Gallery = 9,
-        Section = 10
+        Section = 10,
+        Shorts = 11
     }
 
 

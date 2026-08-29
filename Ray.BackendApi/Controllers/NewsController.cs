@@ -97,7 +97,7 @@ namespace Ray.BackendApi.Controllers
                     //TODO: ver código comentado
                     if (!string.IsNullOrEmpty(newsDto.ImportImageUrl))
                     {
-                        var media = _backloadManager.UploadImageFromUrl(newsDto.ImportImageUrl, "Importada Feed", HttpContext);
+                        var media = _backloadManager.UploadImageFromUrl(newsDto.ImportImageUrl, newsDto.PhotoName ?? "Importada Feed", HttpContext);
                         if (media != null && media.Id > 0)
                         {
                             newsDto.AssetMedia.Add(new AssetMediaDto { Media = media });

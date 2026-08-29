@@ -23,6 +23,7 @@ namespace Ray.FrontendApi.Controllers
             _appSettings = appSettings;
         }
 
+        [HttpGet]
         [HttpGet, Route("Get")]
         public async Task<IActionResult> Get(string name)
         {

@@ -198,7 +198,7 @@ namespace Ray.Managers
                 listNews.Add(await MapMigrationAsync(item));
             }
 
-            //var newList = await _repository.AddImportAsync(listNews);
+            var newList = await _repository.AddImportAsync(listNews);
 
             //var news = (News)await _repository.Add();
 

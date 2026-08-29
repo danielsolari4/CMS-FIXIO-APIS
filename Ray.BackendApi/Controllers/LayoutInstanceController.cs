@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Ray.BackendApi.Attributes;
 using Ray.BackendApi.Controllers.ExceptionController;
 using Ray.Dtos;
@@ -98,11 +96,7 @@ namespace Ray.BackendApi.Controllers
 
                     #endregion
 
-                    var json = JsonConvert.SerializeObject(layoutInstance, new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver()
-                    });
-                    return Ok(json);
+                    return Ok(CMSResponse(layoutInstance));
                 });
         }
 

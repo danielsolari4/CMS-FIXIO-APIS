@@ -20,8 +20,9 @@ namespace Ray.Dtos.Factories
                 case ComponentType.FeaturedNews: return new ComponentFeaturedNewsDto();
                 case ComponentType.Gallery: return new ComponentGalleryDto();
                 case ComponentType.Section: return new ComponentSectionDto();
+                case ComponentType.Shorts: return new ComponentShortsDto();
                 default:
-                    return new ComponentDataFactoryDto();
+                    return null;
             }
         }
 
@@ -40,8 +41,9 @@ namespace Ray.Dtos.Factories
                 case ComponentType.FeaturedNews: return new ComponentInstanceFeaturedNewsJson();
                 case ComponentType.Gallery: return new ComponentInstanceGalleryJson();
                 case ComponentType.Section: return new ComponentInstanceSectionJson();
+                case ComponentType.Shorts: return new ComponentInstanceShortsJson();
                 default:
-                    return new ComponentInstanceDataFactoryJson();
+                    return null;
             }
         }
     }

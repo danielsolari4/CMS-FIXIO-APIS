@@ -32,7 +32,7 @@ namespace Ray.BackendApi.Controllers
                     return NotFound();
 
                 if (settings.Count > 0 && settings.Where(s => s.Name == name).Any())
-                    return Ok(CMSResponse(settings));
+                    return Ok(settings.FirstOrDefault(s => s.Name == name));
                 return null;
             });
 
