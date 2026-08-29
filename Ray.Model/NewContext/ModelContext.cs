@@ -133,13 +133,17 @@ namespace Ray.Model.NewContext
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                //optionsBuilder.UseSqlServer("Server=192.168.101.50;Database=CMS_STG_TT_NETCORE;Persist Security Info=True;User ID=sqlray; Password=45!Password233;MultipleActiveResultSets=True;");
-                optionsBuilder.UseSqlServer("Server=192.168.100.165;Database=CMS_STG_TT_NET_CORE;Persist Security Info=True;user=sqlray; password=45!Password233;MultipleActiveResultSets=True;");
+                var cs = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+                if (string.IsNullOrWhiteSpace(cs))
+                {
+                    cs = "Server=192.168.100.165;Database=CMS_STG_TT_NET_CORE;Persist Security Info=True;user=sqlray; password=45!Password233;MultipleActiveResultSets=True;";
+                }
+                optionsBuilder.UseSqlServer(cs);
             }
             //http://localhost:8983/
 
             optionsBuilder.UseLazyLoadingProxies();
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

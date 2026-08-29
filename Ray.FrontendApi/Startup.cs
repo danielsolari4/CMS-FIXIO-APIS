@@ -41,7 +41,8 @@ namespace Ray.FrontendApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<ModelContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
+                    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
             services.AddMemoryCache();
             services.AddResponseCaching();
@@ -137,7 +138,7 @@ namespace Ray.FrontendApi
                 //app.UseSwaggerUI(c =>
                 //{
                 //    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ray.BackendApi v1");
-                //    c.RoutePrefix = string.Empty; // Esto hace que Swagger esté disponible en la raíz (http://localhost:<puerto>/)
+                //    c.RoutePrefix = string.Empty; // Esto hace que Swagger estï¿½ disponible en la raï¿½z (http://localhost:<puerto>/)
                 //});
             }
 

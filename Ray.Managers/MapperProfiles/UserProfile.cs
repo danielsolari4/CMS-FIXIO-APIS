@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
 
@@ -13,8 +13,9 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.Node, opt => opt.Ignore())
                 .ForMember(x => x.Assets, opt => opt.Ignore());
 
-            CreateMap<UserDto, User>()
-                .ForMember(x => x.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            var m1 = CreateMap<UserDto, User>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(x => x.FirstName, opt => opt.MapFrom(src => src.FirstName))
                 .ForMember(x => x.LastName, opt => opt.MapFrom(src => src.LastName))
                 .ForMember(x => x.Country, opt => opt.MapFrom(src => src.Country))
@@ -33,8 +34,7 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.BirthDate, opt => opt.MapFrom(src => src.BirthDate))
                 .ForMember(x => x.Neighborhood, opt => opt.MapFrom(src => src.Neighborhood))
                 .ForMember(x => x.Reference, opt => opt.MapFrom(src => src.Reference))
-                .ForMember(x => x.Imei, opt => opt.MapFrom(src => src.IMEI))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.Imei, opt => opt.MapFrom(src => src.IMEI));
         }
     }
 }

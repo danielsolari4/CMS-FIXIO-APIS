@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
@@ -25,8 +25,9 @@ namespace Ray.Managers.MapperProfiles
 
             CreateMap<NodeContent, NodeContentDto>();
 
-            CreateMap<NodeDto, Node>()
-                .ForMember(x => x.Description, opt => opt.MapFrom(src => src.Description))
+            var m1 = CreateMap<NodeDto, Node>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(x => x.Order, opt => opt.MapFrom(src => src.Order))
                 .ForMember(x => x.IsPrint, opt => opt.MapFrom(src => src.IsPrint))
                 .ForMember(x => x.IsDiagrammable, opt => opt.MapFrom(src => src.IsDiagrammable))
@@ -39,14 +40,12 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.Keywords, opt => opt.MapFrom(src => src.Keywords))
                 .ForMember(x => x.OGTitle, opt => opt.MapFrom(src => src.OGTitle))
                 .ForMember(x => x.NewSourceId, opt => opt.MapFrom(src => src.NewSourceId))
-                .ForMember(x => x.OGDescription, opt => opt.MapFrom(src => src.OGDescription))
-
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.OGDescription, opt => opt.MapFrom(src => src.OGDescription));
 
 
-            CreateMap<NodeContentDto, NodeContent>()
-                .ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title))
-                .ForAllOtherMembers(x => x.Ignore());
+            var m2 = CreateMap<NodeContentDto, NodeContent>();
+                m2.ForAllMembers(x => x.Ignore());
+                m2.ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title));
         }
     }
 

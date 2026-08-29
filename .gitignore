@@ -42,3 +42,7 @@ Desktop.ini
 ## publish
 publish/
 artifacts/
+
+## Deploy
+.env
+deploy/

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
 
@@ -8,15 +8,15 @@ namespace Ray.Managers.MapperProfiles
     {
         public ThemeProfile()
         {            
-            CreateMap<ThemeDto, Theme>()
-                .ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id))
-                .ForAllOtherMembers(x => x.Ignore());
+            var m1 = CreateMap<ThemeDto, Theme>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
 
-            CreateMap<Theme, ThemeDto>()
-                .ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id))
-                .ForAllOtherMembers(x => x.Ignore());
+            var m2 = CreateMap<Theme, ThemeDto>();
+                m2.ForAllMembers(x => x.Ignore());
+                m2.ForMember(x => x.Structure, opt => opt.MapFrom(src => src.Structure))
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
         }
     }
 }

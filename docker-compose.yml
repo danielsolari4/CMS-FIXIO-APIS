@@ -1,0 +1,59 @@
+services:
+  frontendapi:
+    build:
+      context: .
+      dockerfile: Ray.FrontendApi/Dockerfile
+    container_name: frontendapi
+    restart: unless-stopped
+    networks:
+      - cms-network
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
+      appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
+      appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
+      appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}
+
+  backendapi:
+    build:
+      context: .
+      dockerfile: Ray.BackendApi/Dockerfile
+    container_name: backendapi
+    restart: unless-stopped
+    depends_on:
+      - frontendapi
+    networks:
+      - cms-network
+    ports:
+      - "127.0.0.1:8081:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
+      appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
+      appSettings__syncLayout__url: ${SYNC_LAYOUT_URL:-http://frontendapi/api/LayoutInstance/InternalSyncSolrByNode}
+      appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}
+
+  solr:
+    build:
+      context: ./solr
+      dockerfile: Dockerfile
+    container_name: solr
+    restart: unless-stopped
+    networks:
+      - cms-network
+    ports:
+      - "127.0.0.1:8983:8983"
+    environment:
+      - SOLR_HEAP=512m
+      - SOLR_HOME=/opt/solr/server/solr
+
+networks:
+  cms-network:
+    external: true

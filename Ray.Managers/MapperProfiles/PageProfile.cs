@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
 
@@ -17,8 +17,9 @@ namespace Ray.Managers.MapperProfiles
             CreateMap<PageContent, PageContentDto>()
                 .ForMember(x => x.SocialNetwork, opt => opt.Ignore());
 
-            CreateMap<PageDto, Page>()
-                .ForMember(x => x.ViewsCount, opt => opt.MapFrom(src => src.ViewsCount))
+            var m1 = CreateMap<PageDto, Page>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.ViewsCount, opt => opt.MapFrom(src => src.ViewsCount))
                 .ForMember(x => x.WasPublished, opt => opt.MapFrom(src => src.WasPublished))
                 .ForMember(x => x.PublicationUser, opt => opt.MapFrom(src => src.PublicationUser))
                 .ForMember(x => x.PublicationDate, opt => opt.MapFrom(src => src.PublicationDate))
@@ -29,11 +30,11 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.DataExtension, opt => opt.MapFrom(src => src.DataExtension))
                 .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled))
                 .ForMember(x => x.ShareCount, opt => opt.MapFrom(src => src.ShareCount))
-                .ForMember(x => x.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.IsPrivate, opt => opt.MapFrom(src => src.IsPrivate));
 
-            CreateMap<PageContentDto, PageContent>()
-                .ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title))
+            var m2 = CreateMap<PageContentDto, PageContent>();
+                m2.ForAllMembers(x => x.Ignore());
+                m2.ForMember(x => x.Title, opt => opt.MapFrom(src => src.Title))
                 .ForMember(x => x.SocialNetworkTitle, opt => opt.MapFrom(src => src.SocialNetworkTitle))
                 .ForMember(x => x.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(x => x.LanguageId, opt => opt.MapFrom(src => src.LanguageId))
@@ -44,8 +45,7 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.MetaKeywords, opt => opt.MapFrom(src => src.MetaKeywords))
                 .ForMember(x => x.Introduction, opt => opt.MapFrom(src => src.Introduction))
                 .ForMember(x => x.Volanta, opt => opt.MapFrom(src => src.Volanta))
-                .ForMember(x => x.MobileTitle, opt => opt.MapFrom(src => src.MobileTitle))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.MobileTitle, opt => opt.MapFrom(src => src.MobileTitle));
         }
     }
 }

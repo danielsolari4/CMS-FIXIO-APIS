@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
 
@@ -12,13 +12,13 @@ namespace Ray.Managers.MapperProfiles
                 .ForMember(x => x.News, opt => opt.Ignore())
                 .ForMember(x => x.Media, opt => opt.Ignore());
 
-            CreateMap<AuthorDto, Author>()
-                .ForMember(x => x.Email, opt => opt.MapFrom(src => src.Email))
+            var m1 = CreateMap<AuthorDto, Author>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(x => x.FirstName, opt => opt.MapFrom(src => src.FirstName))
                 .ForMember(x => x.LastName, opt => opt.MapFrom(src => src.LastName))
                 .ForMember(x => x.IsEnabled, opt => opt.MapFrom(src => src.IsEnabled))
-                .ForMember(x => x.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted));
         }
     }
 }

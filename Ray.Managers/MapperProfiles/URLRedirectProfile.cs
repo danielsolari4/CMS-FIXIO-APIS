@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Ray.Dtos;
 using Ray.Model.NewContext.Entities;
 
@@ -8,17 +8,17 @@ namespace Ray.Managers.MapperProfiles
     {
         public URLRedirectProfile()
         {            
-            CreateMap<URLRedirectDto, URLRedirect>()
-                .ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
+            var m1 = CreateMap<URLRedirectDto, URLRedirect>();
+                m1.ForAllMembers(x => x.Ignore());
+                m1.ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
                 .ForMember(x => x.To, opt => opt.MapFrom(src => src.To))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
 
-            CreateMap<URLRedirect, URLRedirectDto>()
-                .ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
+            var m2 = CreateMap<URLRedirect, URLRedirectDto>();
+                m2.ForAllMembers(x => x.Ignore());
+                m2.ForMember(x => x.From, opt => opt.MapFrom(src => src.From))
                 .ForMember(x => x.To, opt => opt.MapFrom(src => src.To))
-                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id))
-                .ForAllOtherMembers(x => x.Ignore());
+                .ForMember(x => x.Id, opt => opt.MapFrom(src => src.Id));
         }
     }
 }
