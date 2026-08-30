@@ -426,7 +426,7 @@ namespace Ray.Managers
 
             try
             {
-                if (EnsureSchema(_queue))
+                if (EnsureSchema(_queue, _appSettings))
                 {
                     _queue.Enqueue(item);
                     persisted = true;
@@ -453,7 +453,7 @@ namespace Ray.Managers
 
             try
             {
-                if (!EnsureSchema(_queue))
+                if (!EnsureSchema(_queue, _appSettings))
                     return 0;
 
                 var items = await _queue.Claim(maxItems, WorkerId);
@@ -471,12 +471,12 @@ namespace Ray.Managers
                         }
                         else
                         {
-                            await Reschedule(_queue, item, DescribeFailure(result));
+                            await Reschedule(_queue, item, DescribeFailure(result), _appSettings);
                         }
                     }
                     catch (Exception ex)
                     {
-                        await Reschedule(_queue, item, ex.Message);
+                        await Reschedule(_queue, item, ex.Message, _appSettings);
                     }
                 }
             }
@@ -492,16 +492,16 @@ namespace Ray.Managers
         {
             try
             {
-                if (!EnsureSchema(_queue))
+                if (!EnsureSchema(_queue, _appSettings))
                     return 0;
 
-                var stuckMinutes = GetIntSetting("Cache.Invalidation.Queue.StuckMinutes", 10);
+                var stuckMinutes = GetQueueInt(_appSettings, "StuckMinutes", 10);
                 var released = await _queue.ReleaseStuck(TimeSpan.FromMinutes(stuckMinutes));
 
                 if (released > 0)
                     CMSLogger.Warn($"[cache-invalidation] {released} stuck item(s) returned to Pending");
 
-                var retentionDays = GetIntSetting("Cache.Invalidation.Queue.RetentionDays", 7);
+                var retentionDays = GetQueueInt(_appSettings, "RetentionDays", 7);
                 await _queue.PurgeCompleted(TimeSpan.FromDays(retentionDays));
 
                 return released;
@@ -551,9 +551,9 @@ namespace Ray.Managers
             }
         }
 
-        private static async Task Reschedule(ICacheInvalidationQueueRepository queue, CacheInvalidationQueueItem item, string error)
+        private static async Task Reschedule(ICacheInvalidationQueueRepository queue, CacheInvalidationQueueItem item, string error, AppSettings appSettings)
         {
-            var maxAttempts = Math.Max(1, GetIntSetting("Cache.Invalidation.Queue.MaxAttempts", 5));
+            var maxAttempts = Math.Max(1, GetQueueInt(appSettings, "MaxAttempts", 5));
 
             if (item.Attempts >= maxAttempts)
             {
@@ -579,7 +579,7 @@ namespace Ray.Managers
                 .Select(x => $"{x.Url} -> {x.StatusCode} {x.Error}"));
         }
 
-        private static bool EnsureSchema(ICacheInvalidationQueueRepository queue)
+        private static bool EnsureSchema(ICacheInvalidationQueueRepository queue, AppSettings appSettings)
         {
             lock (SchemaLock)
             {
@@ -597,7 +597,7 @@ namespace Ray.Managers
                 }
                 catch (Exception ex)
                 {
-                    var retryMinutes = GetIntSetting("Cache.Invalidation.Queue.SchemaRetryMinutes", 5);
+                    var retryMinutes = GetQueueInt(appSettings, "SchemaRetryMinutes", 5);
                     _schemaRetryAfterUtc = DateTime.UtcNow.AddMinutes(retryMinutes);
 
                     CMSLogger.Error($"[cache-invalidation] schema preparation failed for {CacheInvalidationQueueRepository.TableName} (retry in {retryMinutes} min): {ex.Message}");
@@ -635,10 +635,16 @@ namespace Ray.Managers
             });
         }
 
-        private static int GetIntSetting(string key, int defaultValue)
+        private static int GetQueueInt(AppSettings appSettings, string name, int defaultValue)
         {
-            var value = Environment.GetEnvironmentVariable(key)
-                ?? Environment.GetEnvironmentVariable(key.Replace(".", "__"));
+            var queue = appSettings?.CacheInvalidation?.Queue;
+
+            var prop = queue == null ? null : queue.GetType().GetProperty(name);
+            if (prop != null && prop.GetValue(queue) is int intValue)
+                return intValue;
+
+            var value = Environment.GetEnvironmentVariable("Cache.Invalidation.Queue." + name)
+                ?? Environment.GetEnvironmentVariable("Cache.Invalidation.Queue." + name.Replace(".", "__"));
 
             return int.TryParse(value, out var parsed) ? parsed : defaultValue;
         }

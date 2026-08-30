@@ -23,6 +23,26 @@ namespace Ray.Dtos.Configuration
         public AddThis AddThis { get; set; }
         public MobileApp MobileApp { get; set; }
         public SyncLayout SyncLayout { get; set; }
+        public CacheInvalidation CacheInvalidation { get; set; }
+    }
+
+    public class CacheInvalidation
+    {
+        public List<string> Instances { get; set; }
+        public string Url { get; set; }
+        public string Token { get; set; }
+        public string Endpoint { get; set; }
+        public int? MaxAttempts { get; set; }
+        public string SecretCacheKey { get; set; }
+        public CacheInvalidationQueue Queue { get; set; }
+    }
+
+    public class CacheInvalidationQueue
+    {
+        public int? MaxAttempts { get; set; }
+        public int? StuckMinutes { get; set; }
+        public int? RetentionDays { get; set; }
+        public int? SchemaRetryMinutes { get; set; }
     }
 
     public class MobileApp

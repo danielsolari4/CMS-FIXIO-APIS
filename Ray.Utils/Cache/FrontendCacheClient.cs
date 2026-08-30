@@ -35,7 +35,7 @@ namespace Ray.Utils.Cache
                 return result;
             }
 
-            var token = GetSetting("FrontEnd__CacheInvalidation__Token");
+            var token = GetToken(appSettings);
             var mode = string.IsNullOrWhiteSpace(token) ? CacheInvalidationMode.LegacyNext : CacheInvalidationMode.Batch;
             result.Mode = mode.ToString();
 
@@ -43,8 +43,8 @@ namespace Ray.Utils.Cache
             for (var i = 0; i < instances.Count; i++)
             {
                 var instance = mode == CacheInvalidationMode.Batch
-                    ? await PostBatch(instances[i], normalized, purgeCdn: i == 0, token, reason)
-                    : await SendLegacy(instances[i], normalized, reason, kind);
+                    ? await PostBatch(instances[i], normalized, purgeCdn: i == 0, token, reason, appSettings)
+                    : await SendLegacy(instances[i], normalized, reason, kind, appSettings);
 
                 result.Instances.Add(instance);
             }
@@ -59,9 +59,12 @@ namespace Ray.Utils.Cache
             IList<string> paths,
             bool purgeCdn,
             string token,
-            string reason)
+            string reason,
+            AppSettings appSettings)
         {
             var endpointPath = GetSetting("FrontEnd__CacheInvalidation__Endpoint");
+            if (string.IsNullOrWhiteSpace(endpointPath))
+                endpointPath = appSettings?.CacheInvalidation?.Endpoint;
             if (string.IsNullOrWhiteSpace(endpointPath))
                 endpointPath = "/api/cache/invalidate";
 
@@ -81,7 +84,7 @@ namespace Ray.Utils.Cache
                 };
                 request.Headers.Add("Authorization", "Bearer " + token);
                 return request;
-            }, baseUrl);
+            }, baseUrl, appSettings);
 
             result.PurgedCdn = purgeCdn;
             return result;
@@ -91,11 +94,12 @@ namespace Ray.Utils.Cache
             string baseUrl,
             IList<string> paths,
             string reason,
-            CacheInvalidationKind kind)
+            CacheInvalidationKind kind,
+            AppSettings appSettings)
         {
             var instanceResult = new CacheInvalidationInstanceResult { Url = baseUrl, PurgedCdn = true };
             var root = baseUrl.TrimEnd('/');
-            var secret = GetSetting("FrontEnd__SecretCacheKey");
+            var secret = GetSecret(appSettings);
             if (string.IsNullOrWhiteSpace(secret))
                 secret = "1";
 
@@ -103,7 +107,7 @@ namespace Ray.Utils.Cache
             foreach (var path in paths)
             {
                 var url = $"{root}/api/revalidate?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}";
-                var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl);
+                var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl, appSettings);
                 instanceResult.Attempts += single.Attempts;
 
                 if (!single.Success)
@@ -120,10 +124,10 @@ namespace Ray.Utils.Cache
             return instanceResult;
         }
 
-        private static async Task<CacheInvalidationInstanceResult> SendWithRetries(Func<HttpRequestMessage> requestFactory, string baseUrl)
+        private static async Task<CacheInvalidationInstanceResult> SendWithRetries(Func<HttpRequestMessage> requestFactory, string baseUrl, AppSettings appSettings)
         {
             var result = new CacheInvalidationInstanceResult { Url = baseUrl };
-            var maxAttempts = Math.Max(1, GetIntSetting("FrontEnd__CacheInvalidation__MaxAttempts", 3));
+            var maxAttempts = Math.Max(1, GetMaxAttempts(appSettings));
 
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
@@ -186,15 +190,51 @@ namespace Ray.Utils.Cache
 
         private static List<string> GetFrontendInstances(AppSettings appSettings)
         {
-            var raw = GetSetting("FrontEnd__CacheInvalidation__Instances");
-            if (string.IsNullOrWhiteSpace(raw))
-                raw = GetSetting("FrontEnd__Url");
-            if (string.IsNullOrWhiteSpace(raw))
-                raw = appSettings?.Content?.FrontendUrl;
+            var instances = new List<string>();
 
-            return string.IsNullOrWhiteSpace(raw)
-                ? new List<string>()
-                : raw.Split('|').Select(x => x.Trim()).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (appSettings?.CacheInvalidation?.Instances != null && appSettings.CacheInvalidation.Instances.Count > 0)
+                instances.AddRange(appSettings.CacheInvalidation.Instances.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            if (instances.Count == 0 && !string.IsNullOrWhiteSpace(appSettings?.CacheInvalidation?.Url))
+                instances.Add(appSettings.CacheInvalidation.Url.Trim());
+
+            var envInstances = GetSetting("FrontEnd__CacheInvalidation__Instances");
+            if (instances.Count == 0 && !string.IsNullOrWhiteSpace(envInstances))
+                instances.AddRange(envInstances.Split('|'));
+
+            if (instances.Count == 0 && !string.IsNullOrWhiteSpace(GetSetting("FrontEnd__Url")))
+                instances.Add(GetSetting("FrontEnd__Url").Trim());
+
+            if (instances.Count == 0 && !string.IsNullOrWhiteSpace(appSettings?.Content?.FrontendUrl))
+                instances.Add(appSettings.Content.FrontendUrl.Trim());
+
+            return instances
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static string GetToken(AppSettings appSettings)
+        {
+            return GetSetting("FrontEnd__CacheInvalidation__Token")
+                ?? appSettings?.CacheInvalidation?.Token;
+        }
+
+        private static string GetSecret(AppSettings appSettings)
+        {
+            var secret = GetSetting("FrontEnd__SecretCacheKey")
+                ?? appSettings?.CacheInvalidation?.SecretCacheKey;
+            return string.IsNullOrWhiteSpace(secret) ? "1" : secret;
+        }
+
+        private static int GetMaxAttempts(AppSettings appSettings)
+        {
+            if (appSettings?.CacheInvalidation?.MaxAttempts.HasValue == true)
+                return appSettings.CacheInvalidation.MaxAttempts.Value;
+
+            var raw = GetSetting("FrontEnd__CacheInvalidation__MaxAttempts");
+            return int.TryParse(raw, out var parsed) ? parsed : 3;
         }
 
         private static bool HasPlaceholderSegment(string path)
@@ -212,11 +252,6 @@ namespace Ray.Utils.Cache
         private static string GetSetting(string key)
         {
             return Environment.GetEnvironmentVariable(key);
-        }
-
-        private static int GetIntSetting(string key, int defaultValue)
-        {
-            return int.TryParse(GetSetting(key), out var value) ? value : defaultValue;
         }
     }
 
