@@ -17,7 +17,7 @@ namespace Ray.FrontendApi.Controllers
             _manager = manager;
         }
 
-        
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
             return await TryJsonResultAsync(async () =>
@@ -31,7 +31,8 @@ namespace Ray.FrontendApi.Controllers
             });
         }
 
-        
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination)
         {
             return await TryJsonResultAsync(async () =>

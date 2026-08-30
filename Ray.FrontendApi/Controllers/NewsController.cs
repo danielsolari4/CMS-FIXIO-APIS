@@ -38,8 +38,8 @@ namespace Ray.FrontendApi.Controllers
             _statsManager = statsManager;
         }
 
-        
-       public async Task<IActionResult> Get(int id, bool includeContent = false, bool includeAuthors = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, bool includeRelatedAssets = false, int? languageId = null)
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Get(int id, bool includeContent = false, bool includeAuthors = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, bool includeRelatedAssets = false, int? languageId = null)
         {
             return await TryJsonResultAsync(async () =>
             {
@@ -52,8 +52,9 @@ namespace Ray.FrontendApi.Controllers
             });
         }
 
-        
-       public async Task<IActionResult> GetAll(PaginationDto pagination, bool includeContent = false, bool includeAuthors = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, bool includeRelatedAssets = false, int? languageId = null)
+        [HttpGet]
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll(PaginationDto pagination, bool includeContent = false, bool includeAuthors = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, bool includeRelatedAssets = false, int? languageId = null)
         {
             return await TryJsonResultAsync(async () =>
             {
@@ -64,7 +65,7 @@ namespace Ray.FrontendApi.Controllers
 
         [HttpGet]
         [Route("GetAllSolr")]
-        
+
         public async Task<IActionResult> GetAllSolr()
         {
             return await TryJsonResultAsync(async () =>
@@ -104,7 +105,7 @@ namespace Ray.FrontendApi.Controllers
                     }
                 }
             }
-            return Ok(JsonConvert.DeserializeObject<dynamic>(""));
+            return Ok(JsonConvert.DeserializeObject<dynamic>("[{}]"));
 
         }
 

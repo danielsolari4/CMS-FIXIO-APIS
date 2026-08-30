@@ -28,7 +28,7 @@ namespace Ray.FrontendApi.Controllers
 
         
        
-        [HttpGet]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
             return await TryJsonResultAsync(async () =>
@@ -46,15 +46,23 @@ namespace Ray.FrontendApi.Controllers
         [Route("GetByTypeId2")]
         public async Task<IActionResult> GetByTypeId2(int typeId)
         {
-            return await TryJsonResultAsync(async () =>
+            var result = await SolrHelper.ExecuteQuery(SolrCore.MENU, HttpUtility.UrlDecode("q=MenuType:" + typeId), _appSettings.Solr);
+            var stringJson = JsonConvert.SerializeObject(result);
+
+            SolrResponse settings = JsonConvert.DeserializeObject<SolrResponse>(stringJson);
+
+            if (settings == null)
+                return NotFound();
+
+            var items = JsonConvert.DeserializeObject<System.Collections.Generic.List<ItemMenu>>(settings?.response?.docs[0].Structure.ToString());
+            var val = settings?.response?.docs?.Count > 0 ? new MenuJson
             {
-                var node = await _manager.GetByTypeId(typeId);
+                Id = settings?.response?.docs[0].Id,
+                Type = settings?.response?.docs[0].MenuType,
+                Items = items
+            } : null;
 
-                if (node == null)
-                    return NotFound();
-
-                return Ok(node);
-            });
+            return Ok(val);
         }
 
         [HttpGet, Route("GetByTypeId")]
@@ -72,7 +80,7 @@ namespace Ray.FrontendApi.Controllers
         }
 
         [HttpGet]
-        [Route("GetAll")]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination)
         {
             return await TryJsonResultAsync(async () =>

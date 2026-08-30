@@ -24,6 +24,7 @@ namespace Ray.FrontendApi.Controllers
 
 
         #region Channels
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
             return await TryJsonResultAsync(async () =>

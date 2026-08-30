@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,8 +41,10 @@ namespace Ray.FrontendApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var defaultConnection = NormalizeSqlServerConnectionString(Configuration.GetConnectionString("DefaultConnection"));
+
             services.AddDbContext<ModelContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
+                options.UseSqlServer(defaultConnection)
                     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
             services.AddMemoryCache();
@@ -141,6 +144,24 @@ namespace Ray.FrontendApi
             services.AddScoped<IFrontEndUserManager, FrontEndUserManager>();
         }
 
+        private static string NormalizeSqlServerConnectionString(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+                return connectionString;
+
+            var normalized = connectionString.Trim();
+            if (!normalized.EndsWith(";"))
+                normalized += ";";
+
+            if (!normalized.Contains("Encrypt=", StringComparison.OrdinalIgnoreCase))
+                normalized += "Encrypt=False;";
+
+            if (!normalized.Contains("TrustServerCertificate=", StringComparison.OrdinalIgnoreCase))
+                normalized += "TrustServerCertificate=True;";
+
+            return normalized;
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -156,6 +177,7 @@ namespace Ray.FrontendApi
             }
 
             //app.UseHttpsRedirection();
+            app.Use(NormalizeRepeatedSlashes);
             app.UseRouting();
             app.UseResponseCaching();
             app.UseAuthorization();
@@ -164,6 +186,22 @@ namespace Ray.FrontendApi
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private static async System.Threading.Tasks.Task NormalizeRepeatedSlashes(HttpContext context, Func<System.Threading.Tasks.Task> next)
+        {
+            var path = context.Request.Path.Value;
+            if (!string.IsNullOrWhiteSpace(path) && path.Contains("//"))
+            {
+                while (path.Contains("//"))
+                {
+                    path = path.Replace("//", "/");
+                }
+
+                context.Request.Path = path;
+            }
+
+            await next();
         }
     }
 }

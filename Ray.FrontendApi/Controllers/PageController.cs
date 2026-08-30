@@ -24,7 +24,7 @@ namespace Ray.FrontendApi.Controllers
             _appSettings = appSettings;
         }
 
-        [HttpGet]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id, bool includeContent = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, int? languageId = null)
         {
             return await TryJsonResultAsync(async () =>
@@ -38,7 +38,8 @@ namespace Ray.FrontendApi.Controllers
             });
         }
 
-        [HttpGet, Route("GetAll")]
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination, bool includeContent = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, int? languageId = null)
         {
             return await TryJsonResultAsync(async () =>

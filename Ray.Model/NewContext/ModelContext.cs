@@ -136,14 +136,40 @@ namespace Ray.Model.NewContext
                 var cs = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
                 if (string.IsNullOrWhiteSpace(cs))
                 {
-                    cs = "Server=192.168.100.165;Database=CMS_STG_TT_NET_CORE;Persist Security Info=True;user=sqlray; password=45!Password233;MultipleActiveResultSets=True;";
+                    cs = "Server=.;Database=fixioCMS;Trusted_Connection=True;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True;";
                 }
-                optionsBuilder.UseSqlServer(cs);
+                optionsBuilder.UseSqlServer(NormalizeSqlServerConnectionString(cs));
             }
             //http://localhost:8983/
 
             optionsBuilder.UseLazyLoadingProxies();
             optionsBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
+
+        private static string NormalizeSqlServerConnectionString(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return connectionString;
+            }
+
+            var normalized = connectionString.Trim();
+            if (!normalized.EndsWith(";"))
+            {
+                normalized += ";";
+            }
+
+            if (!normalized.Contains("Encrypt=", StringComparison.OrdinalIgnoreCase))
+            {
+                normalized += "Encrypt=False;";
+            }
+
+            if (!normalized.Contains("TrustServerCertificate=", StringComparison.OrdinalIgnoreCase))
+            {
+                normalized += "TrustServerCertificate=True;";
+            }
+
+            return normalized;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

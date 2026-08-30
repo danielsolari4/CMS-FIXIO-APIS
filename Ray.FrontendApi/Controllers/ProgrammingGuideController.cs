@@ -24,8 +24,7 @@ namespace Ray.FrontendApi.Controllers
         }
 
         
-        [HttpGet]
-        
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id, bool includeMedia = false, bool includeNodes = false, bool includeChannels = false)
         {
             return await TryJsonResultAsync(async () =>
@@ -40,8 +39,8 @@ namespace Ray.FrontendApi.Controllers
         }
 
         
-        [HttpGet, Route("GetAll")]
-        
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination, bool includeMedia = false, bool includeNodes = false, bool includeChannels = false)
         {
             return await TryJsonResultAsync(async () =>

@@ -23,7 +23,8 @@ namespace Ray.FrontendApi.Controllers
             _appSettings = appSettings;
         }
 
-                
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination)
         {
             return await TryJsonResultAsync(async () =>

@@ -24,7 +24,7 @@ namespace Ray.FrontendApi.Controllers
 
 
         
-        [HttpGet]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id, bool includeContent = false, bool includeAssets = false, int? languageId = null)
         {
             return await TryJsonResultAsync(async () =>

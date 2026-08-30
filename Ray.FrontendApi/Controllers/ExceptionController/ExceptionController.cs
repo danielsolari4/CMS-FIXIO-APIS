@@ -136,13 +136,21 @@ namespace Ray.FrontendApi.Controllers.ExceptionController
 
         private void LogError(Exception exceptionMessage)
         {
-            string filePath = @"C:\Error.txt";
-
-            using (StreamWriter writer = new StreamWriter(filePath, true))
+            try
             {
-                writer.WriteLine("Message :" + exceptionMessage.Message + "<br/>" + Environment.NewLine + "StackTrace :" + exceptionMessage.StackTrace +
-                                 "" + Environment.NewLine + "Date :" + DateTime.Now.ToString());
-                writer.WriteLine(Environment.NewLine + "-----------------------------------------------------------------------------" + Environment.NewLine);
+                var logDirectory = Path.Combine(AppContext.BaseDirectory, "Logs");
+                Directory.CreateDirectory(logDirectory);
+                var filePath = Path.Combine(logDirectory, "Error.txt");
+
+                using (StreamWriter writer = new StreamWriter(filePath, true))
+                {
+                    writer.WriteLine("Message :" + exceptionMessage.Message + "<br/>" + Environment.NewLine + "StackTrace :" + exceptionMessage.StackTrace +
+                                     "" + Environment.NewLine + "Date :" + DateTime.Now.ToString());
+                    writer.WriteLine(Environment.NewLine + "-----------------------------------------------------------------------------" + Environment.NewLine);
+                }
+            }
+            catch
+            {
             }
         }
     }

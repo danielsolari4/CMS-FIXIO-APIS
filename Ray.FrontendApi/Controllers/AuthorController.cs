@@ -26,7 +26,7 @@ namespace Ray.FrontendApi.Controllers
         }
 
 
-                
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id, bool includeNews = false, bool includeMedia = false)
         {
             return await TryJsonResultAsync(async () =>
@@ -41,7 +41,8 @@ namespace Ray.FrontendApi.Controllers
 
         }
 
-                
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination, bool includeNews = false, bool includeMedia = false)
         {
             return await TryJsonResultAsync(async () =>
@@ -62,6 +63,7 @@ namespace Ray.FrontendApi.Controllers
                 HttpUtility.UrlDecode(HttpUtility.UrlDecode(HttpContext.Request.QueryString.ToString())), _appSettings.Solr)));
         }
 
+        [HttpPost]
         public async Task<IActionResult> Post(AuthorDto authorDto)
         {
             return await TryJsonResultAsync(async () =>

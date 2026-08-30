@@ -34,7 +34,7 @@ namespace Ray.FrontendApi.Controllers
         }
 
         
-        [HttpGet]        
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
             return await TryJsonResultAsync(async () =>
@@ -50,7 +50,8 @@ namespace Ray.FrontendApi.Controllers
         }
 
         
-        [Route("GetAll")]
+        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll(PaginationDto pagination)
         {
             return await TryJsonResultAsync(async () =>
@@ -101,6 +102,7 @@ namespace Ray.FrontendApi.Controllers
             });
         }
 
+        [HttpDelete]
         public async Task<IActionResult> Delete(URLRedirectDto urlRedirectDto)
         {
             return await TryJsonResultAsync(async () =>
