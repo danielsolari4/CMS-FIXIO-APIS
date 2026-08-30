@@ -10,5 +10,6 @@ namespace Ray.Dtos
     {
         public bool Error { get; set; }
         public string FileUrl { get; set; }
+        public string Message { get; set; }
     }
 }

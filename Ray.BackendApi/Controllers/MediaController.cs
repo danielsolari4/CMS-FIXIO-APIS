@@ -28,6 +28,11 @@ using Ray.Utils.Solr;
 using SixLabors.ImageSharp;
 //using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tiff;
 
 namespace Ray.BackendApi.Controllers
 {
@@ -38,7 +43,7 @@ namespace Ray.BackendApi.Controllers
         private readonly IMediaManager _manager;
         private readonly AppSettings _appSettings;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private const bool MustUploadToCloud = true; 
+        private static readonly bool MustUploadToCloud = true;
         private readonly IAmazonS3Manager _amazonS3Manager;
 
         public MediaController(IMediaManager manager, AppSettings appSettings, IHttpContextAccessor httpContextAccessor, IAmazonS3Manager amazonsS3Manager)
@@ -188,46 +193,36 @@ namespace Ray.BackendApi.Controllers
 
                     if (!string.IsNullOrWhiteSpace(model.Base64Image))
                     {
-                        var bytes = Convert.FromBase64String(model.Base64Image);
-                        Image image = null;
-                        IImageFormat imageFormat;
-
-                        //upload from stream (not working)
-                        //try
-                        //{
-                        //    using (var ms = new MemoryStream(bytes))
-                        //    {
-                        //        var replacementPath = ImageStoreHelper.GetMediaSizePath(media, model.Width, model.Height, _appSettings.Media);
-
-                        //        await _amazonS3Manager.UploadOneFromStreamAsync(replacementPath, ms);
-
-                        //    }
-                        //}
-                        //catch (Exception ex)
-                        //{
-
-                        //}
-
-                        try
-                        {
-                            using (var ms = new MemoryStream(bytes))
-                            {
-                               image = Image.Load(ms);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-
-                        }
-
-
-                        //var image = ImageStoreHelper.ConvertBase64ToImage(model.Base64Image);
-
-                        //if (ImageStoreHelper.IsValidFile(image, _appSettings.Media.FileUpload))
-                        //{
-                        var resizedImage = ImageStoreHelper.CropFixedSize(image, model.Width, model.Height);
                         var replacementPath = ImageStoreHelper.GetMediaSizePath(media, model.Width, model.Height, _appSettings.Media);
-                     
+
+                        if (string.IsNullOrWhiteSpace(replacementPath))
+                            throw new ArgumentNullException("replacementPath");
+
+                        var base64Image = model.Base64Image;
+                        var dataSeparatorIndex = base64Image.IndexOf(',');
+                        if (dataSeparatorIndex >= 0)
+                            base64Image = base64Image.Substring(dataSeparatorIndex + 1);
+
+                        var bytes = Convert.FromBase64String(base64Image);
+                        using var inputStream = new MemoryStream(bytes);
+                        using var image = Image.Load(inputStream);
+                        using var resizedImage = ImageStoreHelper.CropFixedSize(image, model.Width, model.Height);
+
+                        if (MustUploadToCloud)
+                        {
+                            await using var outputStream = new MemoryStream();
+                            SaveImage(resizedImage, outputStream, replacementPath);
+                            outputStream.Position = 0;
+
+                            var uploadResult = await _amazonS3Manager.UploadOneFromStreamAsync(replacementPath, outputStream, GetContentType(replacementPath));
+
+                            if (uploadResult.Error)
+                                throw new Exception(uploadResult.Message ?? "AmazonS3 upload failed.");
+
+                            await _manager.Update(media);
+                            return Ok();
+                        }
+
                         var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
                         var sizesFolderPath = isLinux ? "" : "/" + _appSettings.Media.Sizes.FolderPath;
 
@@ -238,11 +233,11 @@ namespace Ray.BackendApi.Controllers
 
                             if (MustUploadToCloud)
                             {
-                                if (MustUploadToCloud)
-                                {
-                                    var path = (string.Format("{0}{1}{2}", Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, replacementPath));
-                                    await _amazonS3Manager.UploadOneFromFileAsync(replacementPath, path, _appSettings.Media.RemoveAfterUpload);
-                                }
+                                var path = (string.Format("{0}{1}{2}", Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, replacementPath));
+                                var uploadResult = await _amazonS3Manager.UploadOneFromFileAsync(replacementPath, path, _appSettings.Media.RemoveAfterUpload);
+
+                                if (uploadResult.Error)
+                                    throw new Exception(uploadResult.Message ?? "AmazonS3 upload failed.");
                             }
 
                            
@@ -255,11 +250,18 @@ namespace Ray.BackendApi.Controllers
                             try
                             {
                                 var path = string.Format("{0}{1}", _appSettings.Media.Sizes.FolderPath, replacementPath);
+                                var directory = Path.GetDirectoryName(isLinux ? path : path.Replace("/", "\\"));
+                                if (!string.IsNullOrWhiteSpace(directory))
+                                    Directory.CreateDirectory(directory);
+
                                 resizedImage.Save(isLinux ? path : path.Replace("/","\\"));
 
                                 if (MustUploadToCloud)
                                 {
-                                    await _amazonS3Manager.UploadOneFromFileAsync(replacementPath, path, _appSettings.Media.RemoveAfterUpload);
+                                    var uploadResult = await _amazonS3Manager.UploadOneFromFileAsync(replacementPath, path, _appSettings.Media.RemoveAfterUpload);
+
+                                    if (uploadResult.Error)
+                                        throw new Exception(uploadResult.Message ?? "AmazonS3 upload failed.");
                                 }
 
                                 await _manager.Update(media);
@@ -281,6 +283,55 @@ namespace Ray.BackendApi.Controllers
         private static readonly string[] dmValidAuthorities = { "dailymotion.com", "www.dailymotion.com", "dai.ly", "www.dai.ly" };
         private static readonly string[] ytValidAuthorities = { "youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be" };
         private static readonly string[] ktValidAuthorities = { "kaltura.com", "www.kaltura.com" };
+
+        private void SaveImage(Image image, Stream stream, string fileName)
+        {
+            image.Save(stream, GetImageEncoder(fileName));
+        }
+
+        private IImageEncoder GetImageEncoder(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            if (extension == ".jpg" || extension == ".jpeg")
+                return new JpegEncoder { Quality = _appSettings.Media.FileUpload.ImageQuality };
+
+            if (extension == ".png")
+                return new PngEncoder();
+
+            if (extension == ".bmp")
+                return new BmpEncoder();
+
+            if (extension == ".gif")
+                return new GifEncoder();
+
+            if (extension == ".tif" || extension == ".tiff")
+                return new TiffEncoder();
+
+            throw new Exception("File is not valid format or type.");
+        }
+
+        private static string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            if (extension == ".jpg" || extension == ".jpeg")
+                return "image/jpeg";
+
+            if (extension == ".png")
+                return "image/png";
+
+            if (extension == ".bmp")
+                return "image/bmp";
+
+            if (extension == ".gif")
+                return "image/gif";
+
+            if (extension == ".tif" || extension == ".tiff")
+                return "image/tiff";
+
+            return "application/octet-stream";
+        }
 
         [HttpPost, Route("Post")]
         public async Task<IActionResult> Post(MediaDto mediaDto)

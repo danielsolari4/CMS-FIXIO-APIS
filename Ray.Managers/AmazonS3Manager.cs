@@ -4,6 +4,7 @@ using Amazon.S3.Model;
 using Ray.Dtos;
 using Ray.Dtos.Configuration;
 using Ray.Utils.Backload;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -15,7 +16,7 @@ namespace Ray.Managers
     {
         Task<AmazonS3FileUploadResultDto> UploadFromFileAsync(FileUploadResult backloadUploadResult, bool removeAfterUpload);
         Task<AmazonS3FileUploadResultDto> UploadOneFromFileAsync(string sizePath, string filePath, bool removeAfterUpload);
-        Task<AmazonS3FileUploadResultDto> UploadOneFromStreamAsync(string sizePath, Stream stream);
+        Task<AmazonS3FileUploadResultDto> UploadOneFromStreamAsync(string sizePath, Stream stream, string contentType = null);
         Task DeleteOneAsync(string key);
     }
 
@@ -26,12 +27,38 @@ namespace Ray.Managers
         public AmazonS3Manager(AppSettings appSettings)
         {
             _appSettings = appSettings;
-            _amazonS3Client = GetAmazonS3Client();
         }
 
+        private IAmazonS3 AmazonS3Client => _amazonS3Client ??= GetAmazonS3Client();
+
+        private bool UsePublicReadAcl => _appSettings.AmazonS3?.UsePublicReadAcl ?? true;
+        private bool DisablePayloadSigning => _appSettings.AmazonS3?.DisablePayloadSigning ?? false;
+
         private IAmazonS3 GetAmazonS3Client()
-            => new AmazonS3Client(new BasicAWSCredentials(_appSettings.AmazonS3.AccessKeyId, _appSettings.AmazonS3.SecretAccessKey),
-                new AmazonS3Config() { ServiceURL = _appSettings.AmazonS3.S3ProductionUrl });
+        {
+            if (_appSettings.AmazonS3 == null ||
+                string.IsNullOrWhiteSpace(_appSettings.AmazonS3.BucketName) ||
+                string.IsNullOrWhiteSpace(_appSettings.AmazonS3.AccessKeyId) ||
+                string.IsNullOrWhiteSpace(_appSettings.AmazonS3.SecretAccessKey) ||
+                string.IsNullOrWhiteSpace(_appSettings.AmazonS3.S3ProductionUrl))
+            {
+                throw new InvalidOperationException("AmazonS3 settings are incomplete.");
+            }
+
+            var config = new AmazonS3Config
+            {
+                ServiceURL = _appSettings.AmazonS3.S3ProductionUrl,
+                ForcePathStyle = _appSettings.AmazonS3.ForcePathStyle,
+                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED
+            };
+
+            if (!string.IsNullOrWhiteSpace(_appSettings.AmazonS3.Region))
+                config.AuthenticationRegion = _appSettings.AmazonS3.Region;
+
+            return new AmazonS3Client(
+                new BasicAWSCredentials(_appSettings.AmazonS3.AccessKeyId, _appSettings.AmazonS3.SecretAccessKey),
+                config);
+        }
 
         /// <summary>
         /// 
@@ -45,7 +72,7 @@ namespace Ray.Managers
             {
                 foreach (var putRequest in GetFilesToPost(backloadUploadResult))
                 {
-                    await _amazonS3Client.PutObjectAsync(putRequest);
+                    await AmazonS3Client.PutObjectAsync(putRequest);
 
                     if (removeAfterUpload)
                         System.IO.File.Delete(putRequest.FilePath);
@@ -59,7 +86,11 @@ namespace Ray.Managers
             }
             catch (AmazonS3Exception e)
             {
-                return new AmazonS3FileUploadResultDto() { Error = true };
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
+            }
+            catch (Exception e)
+            {
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
             }
         }
 
@@ -73,11 +104,12 @@ namespace Ray.Managers
                 {
                     BucketName = _appSettings.AmazonS3.BucketName,
                     Key = sizePath.Replace($@"{_appSettings.Media.Sizes.FolderPath}\", "").Replace(@"\", "/").TrimStart('/'),
-                    FilePath = filePath,
-                    CannedACL = S3CannedACL.PublicRead
+                    FilePath = filePath
                 };
 
-                await _amazonS3Client.PutObjectAsync(putRequest);
+                ApplyAcl(putRequest);
+
+                await AmazonS3Client.PutObjectAsync(putRequest);
 
                 if (removeAfterUpload)
                     System.IO.File.Delete(filePath);
@@ -90,11 +122,15 @@ namespace Ray.Managers
             }
             catch (AmazonS3Exception e)
             {
-                return new AmazonS3FileUploadResultDto() { Error = true };
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
+            }
+            catch (Exception e)
+            {
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
             }
         }
 
-        public async Task<AmazonS3FileUploadResultDto> UploadOneFromStreamAsync(string sizePath, Stream stream)
+        public async Task<AmazonS3FileUploadResultDto> UploadOneFromStreamAsync(string sizePath, Stream stream, string contentType = null)
         {
             try
             {
@@ -103,11 +139,15 @@ namespace Ray.Managers
                 {
                     BucketName = _appSettings.AmazonS3.BucketName,
                     Key = sizePath.Replace($@"{_appSettings.Media.Sizes.FolderPath}\", "").Replace(@"\", "/").TrimStart('/'),
-                    InputStream = stream,
-                    CannedACL = S3CannedACL.PublicRead
+                    InputStream = stream
                 };
 
-                await _amazonS3Client.PutObjectAsync(putRequest);
+                if (!string.IsNullOrWhiteSpace(contentType))
+                    putRequest.ContentType = contentType;
+
+                ApplyAcl(putRequest);
+
+                await AmazonS3Client.PutObjectAsync(putRequest);
 
 
                 return new AmazonS3FileUploadResultDto()
@@ -118,7 +158,11 @@ namespace Ray.Managers
             }
             catch (AmazonS3Exception e)
             {
-                return new AmazonS3FileUploadResultDto() { Error = true };
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
+            }
+            catch (Exception e)
+            {
+                return new AmazonS3FileUploadResultDto() { Error = true, Message = e.Message };
             }
         }
 
@@ -127,7 +171,7 @@ namespace Ray.Managers
             if (string.IsNullOrWhiteSpace(key))
                 return;
 
-            await _amazonS3Client.DeleteObjectAsync(new DeleteObjectRequest
+            await AmazonS3Client.DeleteObjectAsync(new DeleteObjectRequest
             {
                 BucketName = _appSettings.AmazonS3.BucketName,
                 Key = key.Replace("\\", "/").TrimStart('/')
@@ -157,16 +201,26 @@ namespace Ray.Managers
             if (string.IsNullOrWhiteSpace(keyPath) || string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 return;
 
-            putObjectRequests.Add(new PutObjectRequest()
+            var putRequest = new PutObjectRequest()
             {
                 BucketName = _appSettings.AmazonS3.BucketName,
                 Key = keyPath.Replace(Directory.GetCurrentDirectory(), string.Empty)
                     .Replace(_appSettings.Media.Sizes.FolderPath, string.Empty)
                     .Replace("\\", "/")
                     .TrimStart('/'),
-                FilePath = filePath,
-                CannedACL = S3CannedACL.PublicRead
-            });
+                FilePath = filePath
+            };
+
+            ApplyAcl(putRequest);
+            putObjectRequests.Add(putRequest);
+        }
+
+        private void ApplyAcl(PutObjectRequest putRequest)
+        {
+            if (UsePublicReadAcl)
+                putRequest.CannedACL = S3CannedACL.PublicRead;
+
+            putRequest.DisablePayloadSigning = DisablePayloadSigning;
         }
     }
 }

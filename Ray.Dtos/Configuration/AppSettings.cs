@@ -80,6 +80,10 @@ namespace Ray.Dtos.Configuration
         public string AccessKeyId { get; set; }
         public string SecretAccessKey { get; set; }
         public string S3ProductionUrl { get; set; }
+        public string Region { get; set; }
+        public bool ForcePathStyle { get; set; } = true;
+        public bool UsePublicReadAcl { get; set; } = true;
+        public bool DisablePayloadSigning { get; set; }
     }
 
     public class SolrConfig
