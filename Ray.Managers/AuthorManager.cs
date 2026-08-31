@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -177,11 +177,11 @@ namespace Ray.Managers
                         var sizesPaths = JsonConvert.DeserializeObject<dynamic>(author.Media.SizesPaths);
                         if (sizesPaths != null)
                         {
-                            dto.Media.Size1Path = _appSettings.Content.AdminDomain + sizesPaths.Size1Path;
-                            dto.Media.Size2Path = _appSettings.Content.AdminDomain + sizesPaths.Size2Path;
-                            dto.Media.Size3Path = _appSettings.Content.AdminDomain + sizesPaths.Size3Path;
-                            dto.Media.Size4Path = _appSettings.Content.AdminDomain + sizesPaths.Size4Path;
-                            dto.Media.Size5Path = _appSettings.Content.AdminDomain + sizesPaths.Size5Path;
+                            dto.Media.Size1Path = sizesPaths.Size1Path;
+                            dto.Media.Size2Path = sizesPaths.Size2Path;
+                            dto.Media.Size3Path = sizesPaths.Size3Path;
+                            dto.Media.Size4Path = sizesPaths.Size4Path;
+                            dto.Media.Size5Path = sizesPaths.Size5Path;
                         }
                     }
                 }

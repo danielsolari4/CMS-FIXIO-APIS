@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -292,7 +292,7 @@ namespace Ray.Managers
             InitAddMapper();
 
             var dto = _Mapper.Map<MediaDto>(media);
-            dto.SourcePath = _appSettings.Content.AdminDomain + media.SourcePath;
+            dto.SourcePath = media.SourcePath;
 
             if (includeGalleries)
             {
@@ -340,11 +340,11 @@ namespace Ray.Managers
                 var sizesPaths = JsonConvert.DeserializeObject<dynamic>(media.SizesPaths);
                 if (sizesPaths != null)
                 {
-                    dto.Size1Path = _appSettings.Content.AdminDomain + sizesPaths.Size1Path;
-                    dto.Size2Path = _appSettings.Content.AdminDomain + sizesPaths.Size2Path;
-                    dto.Size3Path = _appSettings.Content.AdminDomain + sizesPaths.Size3Path;
-                    dto.Size4Path = _appSettings.Content.AdminDomain + sizesPaths.Size4Path;
-                    dto.Size5Path = _appSettings.Content.AdminDomain + sizesPaths.Size5Path;
+                    dto.Size1Path = sizesPaths.Size1Path;
+                    dto.Size2Path = sizesPaths.Size2Path;
+                    dto.Size3Path = sizesPaths.Size3Path;
+                    dto.Size4Path = sizesPaths.Size4Path;
+                    dto.Size5Path = sizesPaths.Size5Path;
                 }
             }
 

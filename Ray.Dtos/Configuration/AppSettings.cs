@@ -91,7 +91,6 @@ namespace Ray.Dtos.Configuration
         public string AdminUrl { get; set; }
         public string ApiBackendUrl { get; set; }
         public string TimeZone { get; set; }
-        public string AdminDomain { get; set; }
     }
 
     public class AmazonS3
