@@ -52,3 +52,5 @@ artifacts/
 ## Deploy
 .env
 deploy/
+!deploy/
+!deploy/**

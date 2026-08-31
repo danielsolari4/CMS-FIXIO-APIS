@@ -23,11 +23,16 @@ Proyecto en el droplet: **`/root/api-fe`** (`docker-compose.yml` + `.env` + carp
 
 | Contenedor | Imagen | Puertos | Rol |
 |---|---|---|---|
-| `frontendapi` | `api-fe-frontendapi` (build local) | `127.0.0.1:8080→80` | API de contenido (pública) |
-| `backendapi` | `api-fe-backendapi` (build local) | `127.0.0.1:8081→80` | API administrativa (JWT) |
-| `solr` | `api-fe-solr` (build `./solr`) | `127.0.0.1:8983→8983` | Motor de búsqueda |
+| `frontendapi` | `fixiocode/api-fe-frontendapi:latest` (build local, se transfiere) | `127.0.0.1:8080→80` | API de contenido (pública) |
+| `backendapi` | `fixiocode/api-fe-backendapi:latest` (build local, se transfiere) | `127.0.0.1:8081→80` | API administrativa (JWT) |
+| `solr` | `fixiocode/api-fe-solr:latest` (build en el droplet, config desde repo) | `127.0.0.1:8983→8983` | Motor de búsqueda |
 | `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | interno `1433` | Base de datos principal |
 | `mongo` | `mongo:7` | interno `27017` | Base secundaria (conteos de vistas, sesiones, etc.) |
+
+> Las imágenes .NET se buildean con Docker Desktop local y se transfieren
+> (`docker save` → `scp` → `docker load`); el droplet solo hace
+> `docker compose up -d --force-recreate`. Solr se builda en el droplet
+> porque su Dockerfile es liviano (`FROM solr:8.11.4` + config).
 
 Todos comparten la red externa **`cms-network`** (se creó una vez: `docker network create cms-network`). Los contenedores se resuelven entre sí por nombre (`sqlserver`, `mongo`, `solr`).
 
@@ -57,8 +62,15 @@ Nota: `appSettings__solr__url` apunta a `http://solr:8983/solr/` (DNS interno), 
 
 ## SDK .NET
 
-- `global.json` pinea **10.0.301**. La máquina local tiene SDK 9 → **no se buildea local**, todo build ocurre en el droplet vía Docker.
-- Dockerfiles: `Ray.FrontendApi/Dockerfile` y `Ray.BackendApi/Dockerfile` (multi-stage, publican en .NET 10).
+- `global.json` pinea **10.0.301**. La máquina local tiene SDK 9 → **no se
+  buildea con dotnet local**: el build ocurre con **Docker Desktop** (imagen
+  `mcr.microsoft.com/dotnet/sdk:10.0` dentro del contenedor), igual que antes
+  en el droplet. La imagen resultante se exporta (`docker save`) y se transfiere
+  al droplet, que solo hace `docker load` + `docker compose up -d`.
+- Dockerfiles: `Ray.FrontendApi/Dockerfile`, `Ray.BackendApi/Dockerfile` y
+  `Ray.CMS/Dockerfile` (multi-stage, publican en .NET 10).
+- `deploy/deploy.ps1` hace el flujo completo; `deploy/deploy-solr.ps1` solo la
+  config de Solr.
 
 ## Paquetes / dependencias clave
 

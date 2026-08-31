@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Ray.FrontendApi/Dockerfile
+    image: fixiocode/api-fe-frontendapi:latest
+    pull_policy: never
     container_name: frontendapi
     restart: unless-stopped
     networks:
@@ -22,6 +24,8 @@ services:
     build:
       context: .
       dockerfile: Ray.BackendApi/Dockerfile
+    image: fixiocode/api-fe-backendapi:latest
+    pull_policy: never
     container_name: backendapi
     restart: unless-stopped
     depends_on:
@@ -44,6 +48,8 @@ services:
     build:
       context: ./solr
       dockerfile: Dockerfile
+    image: fixiocode/api-fe-solr:latest
+    pull_policy: never
     container_name: solr
     restart: unless-stopped
     networks:

@@ -1,19 +1,28 @@
 # Deploy y operación
 
-Todo el build/despliegue se hace en el droplet. Desde Windows (PowerShell):
+El droplet **ya no compila**. Las imágenes (.NET 10) se buildean con
+Docker Desktop local, se exportan (`docker save` -> `tar -gz`), se suben
+por `scp` y en el droplet solo se hace `docker load` + `docker compose up -d`.
+Esto evita saturar la RAM del droplet (2 GB) que hacía que el build .NET
+OOM-killeara a `solr`.
+
+Desde Windows (PowerShell), desde la raíz del repo `APIS-TODAS`:
 
 ```powershell
-$S = "root@159.223.183.214"
+# Build + deploy de frontendapi y backendapi
+.\deploy\deploy.ps1
 
-# Subir algún archivo del repo
-scp "Ruta\local\archivo.csproj" $S:/root/api-fe/...  # o al path que corresponda
+# Solo una API
+.\deploy\deploy.ps1 -Service frontendapi
+.\deploy\deploy.ps1 -Service backendapi
 
-# Build + recrear un servicio (se ejecuta en el droplet)
-ssh $S "cd /root/api-fe && docker compose up -d --build frontendapi"
-
-# Recrear todo
-ssh $S "cd /root/api-fe && docker compose up -d --build"
+# Config de solr (solo si cambió la carpeta solr/ del repo)
+.\deploy\deploy-solr.ps1
 ```
+
+`docker compose up -d --force-recreate frontendapi backendapi` se ejecuta
+en el droplet (`/root/api-fe`) sin `--build`. `pull_policy: never` hace que
+compose falle rápido si la imagen no está cargada.
 
 ## Comandos de verificación frecuentes
 
