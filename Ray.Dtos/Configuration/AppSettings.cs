@@ -32,6 +32,7 @@ namespace Ray.Dtos.Configuration
         public string Url { get; set; }
         public string Token { get; set; }
         public string Endpoint { get; set; }
+        public bool? PurgeCdn { get; set; }
         public int? MaxAttempts { get; set; }
         public string SecretCacheKey { get; set; }
         public CacheInvalidationQueue Queue { get; set; }

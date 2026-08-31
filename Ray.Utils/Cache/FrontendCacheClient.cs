@@ -42,8 +42,9 @@ namespace Ray.Utils.Cache
             var stopwatch = Stopwatch.StartNew();
             for (var i = 0; i < instances.Count; i++)
             {
+                var purgeCdn = GetPurgeCdn(appSettings, i == 0);
                 var instance = mode == CacheInvalidationMode.Batch
-                    ? await PostBatch(instances[i], normalized, purgeCdn: i == 0, token, reason, appSettings)
+                    ? await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings)
                     : await SendLegacy(instances[i], normalized, reason, kind, appSettings);
 
                 result.Instances.Add(instance);
@@ -235,6 +236,15 @@ namespace Ray.Utils.Cache
 
             var raw = GetSetting("FrontEnd__CacheInvalidation__MaxAttempts");
             return int.TryParse(raw, out var parsed) ? parsed : 3;
+        }
+
+        private static bool GetPurgeCdn(AppSettings appSettings, bool defaultValue)
+        {
+            var raw = GetSetting("FrontEnd__CacheInvalidation__PurgeCdn");
+            if (bool.TryParse(raw, out var parsed))
+                return parsed;
+
+            return appSettings?.CacheInvalidation?.PurgeCdn ?? defaultValue;
         }
 
         private static bool HasPlaceholderSegment(string path)
