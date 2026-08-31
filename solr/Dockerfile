@@ -1,4 +1,4 @@
-FROM solr:8.11.4
+FROM solr:8.4.0
 
 COPY /solr_home /opt/solr/server/solr
 COPY /mssql-jdbc-9.4.1.jre8.jar /opt/solr/contrib/dataimporthandler/lib/mssql-jdbc.jar

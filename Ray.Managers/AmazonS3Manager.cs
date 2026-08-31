@@ -100,10 +100,13 @@ namespace Ray.Managers
             try
             {
                 //Sizes
-                var putRequest = new PutObjectRequest()
+            var putRequest = new PutObjectRequest()
                 {
                     BucketName = _appSettings.AmazonS3.BucketName,
-                    Key = sizePath.Replace($@"{_appSettings.Media.Sizes.FolderPath}\", "").Replace(@"\", "/").TrimStart('/'),
+                    Key = sizePath
+                        .Replace(_appSettings.Media.Sizes.FolderPath + "\\", "")
+                        .Replace(_appSettings.Media.Sizes.FolderPath + "/", "")
+                        .Replace("\\", "/").TrimStart('/'),
                     FilePath = filePath
                 };
 
@@ -138,7 +141,10 @@ namespace Ray.Managers
                 var putRequest = new PutObjectRequest()
                 {
                     BucketName = _appSettings.AmazonS3.BucketName,
-                    Key = sizePath.Replace($@"{_appSettings.Media.Sizes.FolderPath}\", "").Replace(@"\", "/").TrimStart('/'),
+                    Key = sizePath
+                        .Replace(_appSettings.Media.Sizes.FolderPath + "\\", "")
+                        .Replace(_appSettings.Media.Sizes.FolderPath + "/", "")
+                        .Replace("\\", "/").TrimStart('/'),
                     InputStream = stream
                 };
 
@@ -181,17 +187,14 @@ namespace Ray.Managers
         private List<PutObjectRequest> GetFilesToPost(FileUploadResult backloadUploadResult)
         {
             List<PutObjectRequest> putObjectRequests = new List<PutObjectRequest>();
-            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            var concat = isLinux ? "/" : @"\";
-            var pathToReplace = $"{Directory.GetCurrentDirectory()}{concat}";
             AddPutRequest(putObjectRequests, backloadUploadResult.Url, backloadUploadResult.Url);
-            AddPutRequest(putObjectRequests, backloadUploadResult.ThumbnailUrl, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.ThumbnailUrl}" : $"{backloadUploadResult.ThumbnailUrl}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size1Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size1Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size1Path}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size2Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size2Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size2Path}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size3Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size3Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size3Path}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size4Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size4Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size4Path}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size5Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size5Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size5Path}".Replace("/", "\\"));
-            AddPutRequest(putObjectRequests, backloadUploadResult.Size6Path, isLinux ? $"{pathToReplace}{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size6Path}" : $"{_appSettings.Media.Sizes.FolderPath}{backloadUploadResult.Size6Path}".Replace("/", "\\"));
+            AddPutRequest(putObjectRequests, backloadUploadResult.ThumbnailUrl, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.ThumbnailUrl));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size1Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size1Path));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size2Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size2Path));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size3Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size3Path));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size4Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size4Path));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size5Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size5Path));
+            AddPutRequest(putObjectRequests, backloadUploadResult.Size6Path, Path.Combine(Directory.GetCurrentDirectory(), _appSettings.Media.Sizes.FolderPath, backloadUploadResult.Size6Path));
 
             return putObjectRequests;
         }

@@ -18,7 +18,6 @@ services:
       appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
       appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
-      appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}
 
   backendapi:
     build:
@@ -41,8 +40,6 @@ services:
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
       appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
-      appSettings__syncLayout__url: ${SYNC_LAYOUT_URL:-http://frontendapi/api/LayoutInstance/InternalSyncSolrByNode}
-      appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}
 
   solr:
     build:

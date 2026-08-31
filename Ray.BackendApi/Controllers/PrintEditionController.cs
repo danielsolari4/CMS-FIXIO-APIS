@@ -93,7 +93,7 @@ namespace Ray.BackendApi.Controllers
                         Directory.CreateDirectory(dir);
 
                         string fileName = $"{image.page}.jpg";
-                        var filePath = string.Format(@"{0}\{1}", dir, Path.GetFileName(fileName)); //Join path with fileName
+                        var filePath = Path.Combine(dir, Path.GetFileName(fileName)); //Join path with fileName
 
                         using (FileStream fs = new FileStream(filePath, FileMode.Create))
                         {

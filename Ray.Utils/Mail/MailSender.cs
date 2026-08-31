@@ -109,9 +109,9 @@ namespace Ray.Utils.Mail
             //"C:\\Repos\\Ray\\Apis\\Trunk\\CMS.Utils\\Mail\\Templates"
             var templateLocation = _smtpSettings.EmailTemplateLocation;
 
-            if (!templateLocation.Trim().EndsWith(@"\"))
+            if (!templateLocation.Trim().EndsWith(System.IO.Path.DirectorySeparatorChar) && !templateLocation.Trim().EndsWith('/'))
             {
-                templateLocation = templateLocation.Trim() + @"\";
+                templateLocation = templateLocation.Trim() + System.IO.Path.DirectorySeparatorChar;
             }
 
             var templateBuilder = new TemplateBuilder(templateLocation);

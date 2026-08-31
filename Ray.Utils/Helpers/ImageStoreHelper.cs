@@ -31,9 +31,10 @@ namespace Ray.Utils.Helpers
                 throw new ConfigurationException("PIEX_002");//profile picture folder name
 
             var relativePath = mediaSettings.Profile.FolderPath;
+            var profileDir = Path.Combine(relativePath, storeFolderName);
 
-            if (!Directory.Exists(string.Format("{0}{1}", relativePath, storeFolderName)))
-                Directory.CreateDirectory(string.Format("{0}{1}", relativePath, storeFolderName));
+            if (!Directory.Exists(profileDir))
+                Directory.CreateDirectory(profileDir);
 
             if (!string.IsNullOrWhiteSpace(file.ContentType) && mediaSettings.Profile.ContentTypeAllowed != null && !mediaSettings.Profile.ContentTypeAllowed.Contains(file.ContentType.Replace("image/", string.Empty)))
                 throw new System.Exception("PIEX_003");//profile picture content type
@@ -42,7 +43,7 @@ namespace Ray.Utils.Helpers
                 throw new System.Exception("PIEX_004-" + ((int)mediaSettings.Profile.MaxContentLength / 1000000) + "MB"); //profile picture content size
 
             var fileName = string.Format("{0}{1}", Guid.NewGuid(), Path.GetExtension(file.FileName));
-            string filePath = string.Format("{0}{1}/{2}", relativePath, storeFolderName, fileName);
+            string filePath = Path.Combine(relativePath, storeFolderName, fileName);
 
             using (Stream fileStream = new FileStream(filePath, FileMode.Create))
             {
@@ -51,8 +52,8 @@ namespace Ray.Utils.Helpers
 
 
             // deletes old profile image path
-            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(string.Format("{0}{1}", relativePath, profileImagePath)))
-                File.Delete(string.Format("{0}{1}", relativePath, profileImagePath));
+            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(Path.Combine(relativePath, profileImagePath)))
+                File.Delete(Path.Combine(relativePath, profileImagePath));
 
             return string.Format("{0}/{1}", storeFolderName, fileName);
         }
@@ -125,11 +126,12 @@ namespace Ray.Utils.Helpers
             LogImage("Toma el path relativo", mediaSettings);
 
             var relativePath = mediaSettings.Profile.FolderPath;
+            var profileDir = Path.Combine(relativePath, storeFolderName);
 
             LogImage("Chequea la existencia del directorio", mediaSettings);
 
-            if (!Directory.Exists(string.Format("{0}{1}", relativePath, storeFolderName)))
-                Directory.CreateDirectory(string.Format("{0}{1}", relativePath, storeFolderName));
+            if (!Directory.Exists(profileDir))
+                Directory.CreateDirectory(profileDir);
 
             LogImage("Chequea la extensión del archivo", mediaSettings);
 
@@ -150,7 +152,7 @@ namespace Ray.Utils.Helpers
             {
                 LogImage("Copia el archivo de la imagen y lo genera en el directorio final", mediaSettings);
 
-                using (var fileStream = File.Create(string.Format("{0}{1}\\{2}", relativePath, storeFolderName, new_fileName)))
+                using (var fileStream = File.Create(Path.Combine(relativePath, storeFolderName, new_fileName)))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
                     stream.CopyTo(fileStream);
@@ -166,8 +168,8 @@ namespace Ray.Utils.Helpers
             }
 
             // deletes old profile image path
-            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(string.Format("{0}{1}", relativePath, profileImagePath)))
-                File.Delete(string.Format("{0}{1}", relativePath, profileImagePath));
+            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(Path.Combine(relativePath, profileImagePath)))
+                File.Delete(Path.Combine(relativePath, profileImagePath));
 
             return string.Format("{0}/{1}", storeFolderName, new_fileName);
         }
@@ -180,7 +182,7 @@ namespace Ray.Utils.Helpers
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(message);
             // flush every 20 seconds as you do it
-            File.AppendAllText(string.Format("{0}{1}\\{2}", relativePath, storeFolderName, new_fileName), sb.ToString());
+            File.AppendAllText(Path.Combine(relativePath, storeFolderName, new_fileName), sb.ToString());
             sb.Clear();
         }
 
@@ -388,7 +390,12 @@ namespace Ray.Utils.Helpers
                     //encParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, mediaSettings.FileUpload.ImageQuality);
 
                     resizedImage.Save(newFileName, encoder); //Saves image foreach Size
-                    return newFileName.Replace(stringToReplace, "").Replace(mediaSettings.Sizes.FolderPath, "").Replace("\\" + mediaSettings.FileUpload.FolderPath, "").Replace("/" + mediaSettings.FileUpload.FolderPath, "").Replace("\\", "/").Replace("//", "/");
+                    return newFileName.Replace(stringToReplace, "")
+                        .Replace(mediaSettings.Sizes.FolderPath + "\\", "")
+                        .Replace(mediaSettings.Sizes.FolderPath + "/", "")
+                        .Replace("\\" + mediaSettings.FileUpload.FolderPath, "")
+                        .Replace("/" + mediaSettings.FileUpload.FolderPath, "")
+                        .Replace("\\", "/").Replace("//", "/");
                 }
 
 
@@ -422,7 +429,12 @@ namespace Ray.Utils.Helpers
                
 
                     resizedImage.Save(newFileName, encoder); //Saves image foreach Size
-                    return newFileName.Replace(stringToReplace, "").Replace("\\" + mediaSettings.FileUpload.FolderPath, "").Replace("/" + mediaSettings.FileUpload.FolderPath, "").Replace("\\", "/").Replace("//", "/");
+                    return newFileName.Replace(stringToReplace, "")
+                        .Replace(mediaSettings.Sizes.FolderPath + "\\", "")
+                        .Replace(mediaSettings.Sizes.FolderPath + "/", "")
+                        .Replace("\\" + mediaSettings.FileUpload.FolderPath, "")
+                        .Replace("/" + mediaSettings.FileUpload.FolderPath, "")
+                        .Replace("\\", "/").Replace("//", "/");
                 }
 
 

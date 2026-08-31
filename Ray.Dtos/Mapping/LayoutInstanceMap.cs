@@ -38,7 +38,8 @@ namespace Ray.Dtos.Mapping
                 PublicationDate = model.PublicationDate,
                 Description = model.Description,
                 StructureJson = JsonConvert.DeserializeObject<LayoutStructureDto>(model.Structure),
-                PrintEditionId = model.PrintEditionId
+                PrintEditionId = model.PrintEditionId,
+                IsEnabled = model.IsEnabled
             };
         }
 
