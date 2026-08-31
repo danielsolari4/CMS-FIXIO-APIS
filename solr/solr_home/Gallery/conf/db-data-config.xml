@@ -1,0 +1,43 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+
+  <document>
+    <entity name="Gallery"
+            query="exec dbo.GetAllSolrGallery"
+            deltaQuery="exec dbo.GetDeltaSolrGallery"
+            deltaImportQuery="exec dbo.GetDeltaQuerySolrGallery '${dih.delta.Id}'">
+      <field column="Id" name="Id" />
+      <field column="Name" name="Name" />
+      <field column="IsEnabled" name="IsEnabled" />
+      <field column="CreationUser" name="CreationUser" />
+      <field column="CreationDate" name="CreationDate" />
+      <field column="LastModificationDate" name="LastModificationDate" />
+      <field column="LastModificationUser" name="LastModificationUser" />
+      <entity name="MediaCategory" query="select CategoryId from MediaCategory where MediaId='${Media.Id}'">
+        <entity name="Category" query="select Id,Name from Category where Id='${MediaCategory.CategoryId}'">
+          <field column="Id" name="Categories_Id"/>
+          <field column="Name" name="Categories_Name"/>
+        </entity>
+      </entity>
+      <entity name="MediaGallery" query="select MediaId from MediaGallery where GalleryId='${Gallery.Id}' Order By [Order]">
+        <entity name="Media" query="select Id,Title,Description,SizesPaths,ISNULL(MediaUrl, '') MediaUrl,Discriminator  from Media where Id='${MediaGallery.MediaId}'">
+          <field column="Id" name="MediaGalleryId" />
+          <field column="SizesPaths" name="MediaSizesPaths" />
+          <field column="MediaUrl" name="MediaUrls" />
+          <field column="Description" name="Description" />
+          <field column="Discriminator" name="Discriminator" />
+          <field column="Title" name="Title" />
+        </entity>
+      </entity>
+    </entity>
+  </document>
+</dataConfig>
+
+
+
+

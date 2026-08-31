@@ -1,0 +1,38 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="Category"
+				query="exec dbo.GetAllSolrCategory" 
+				deltaQuery="exec dbo.GetDeltaSolrCategory" 
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrCategory '${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="Name" name="Name" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<!-- <entity name="MediaCategory" query="select MediaId from MediaCategory WITH(NOLOCK) where CategoryId='${Category.Id}'"> -->
+				<!-- <entity name="Media" query="select Id from Media WITH(NOLOCK) where Id='${MediaCategory.MediaId}'"> -->
+					<!--<field column="Id" name="MediaCategoryId" />--> 
+				<!-- </entity> -->
+			<!-- </entity> -->
+			<entity name="CategoryNode" query="select NodeId,Featured from CategoryNode where CategoryId='${Category.Id}'">
+				<field column="Featured" name="CategoryNodeFeatured" />
+				<entity name="Node" query="select Id from [Node] where Id='${CategoryNode.NodeId}'">
+					<field column="Id" name="CategoryNodeId" />
+				</entity>
+			</entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

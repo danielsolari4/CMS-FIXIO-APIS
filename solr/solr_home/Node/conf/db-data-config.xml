@@ -1,0 +1,55 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="Node" 
+				query="exec dbo.GetAllSolrNode"
+				deltaQuery="exec dbo.GetDeltaSolrNode"
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrNode '${dih.delta.Id}'"
+				deletedPkQuery="select Id from [Node] where IsDeleted='true'">
+			<field column="Id" name="Id" />
+			<field column="Description" name="Description" />
+			<field column="Order" name="Order" />
+			<field column="IsPrint" name="IsPrint" />
+			<field column="NewSourceId" name="NewSourceId" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="IsPublished" name="IsPublished" />
+			<field column="IsDiagrammable" name="IsDiagrammable" />
+			<field column="ParentNodeId" name="ParentNodeId" />
+			<entity name="NodeContent_en" query="select Id,Title from NodeContent WITH(NOLOCK) where NodeId='${Node.Id}' AND LanguageId='1'">
+				<field column="Id" name="NodeContentId_en" />
+				<field column="Title" name="Title_en" />
+			</entity>
+			<entity name="NodeContent_es" query="select Id,Title from NodeContent WITH(NOLOCK) where NodeId='${Node.Id}' AND LanguageId='2'">
+				<field column="Id" name="NodeContentId_es" />
+				<field column="Title" name="Title_es" />
+			</entity>
+			<entity name="RelatedKeywords" query="select Name from Keyword ky WITH(NOLOCK) JOIN NodeKeyword nk WITH(NOLOCK) on ky.Id = nk.KeywordId WHERE nk.NodeId = '${Node.Id}'">
+				<field column="Name" name="RelatedKeywords" />
+			</entity>
+			<entity name="Microsite" query="exec GetMicrositeNode '${Node.Id}'">
+				<field column="Breadcrumb" name="Microsite" />
+			  </entity>
+			<field column="SeoDescription" name="SeoDescription" />
+			<field column="SeoTitle" name="SeoTitle" />
+			<field column="SeoImage" name="SeoImage" />
+			<field column="Keywords" name="Keywords" />
+			<field column="OGTitle" name="OGTitle" />
+			<field column="OGDescription" name="OGDescription" />
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

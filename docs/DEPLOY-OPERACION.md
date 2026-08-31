@@ -20,9 +20,20 @@ Desde Windows (PowerShell), desde la raíz del repo `APIS-TODAS`:
 .\deploy\deploy-solr.ps1
 ```
 
+> Config del droplet versionada en el repo: `docker-compose.yml` (raíz, idéntico
+> al droplet), `deploy/droplet/.env` (credenciales reales de SQL/Mongo) y `solr/`
+> (Dockerfile + `solr_home` + jar mssql-jdbc). `deploy-solr.ps1` sube la config y
+> builda en el droplet solo si cambió `solr/`.
+
 `docker compose up -d --force-recreate frontendapi backendapi` se ejecuta
 en el droplet (`/root/api-fe`) sin `--build`. `pull_policy: never` hace que
 compose falle rápido si la imagen no está cargada.
+
+> **Ojo con `solr`**: los índices viven en la capa del contenedor
+> (`/opt/solr/server/solr/<Core>/data`, p. ej. `User` ~104MB, `Keywords` ~67MB);
+> el volumen `/var/solr` solo guarda logs/config. Un `--force-recreate`/rebuild
+> de solr **borra los índices** → repoblarlos con `full-import` (ver [SOLR.md](SOLR.md)).
+> Los deploys normales no tocan el contenedor `solr`.
 
 ## Comandos de verificación frecuentes
 
@@ -59,7 +70,7 @@ curl -s "http://127.0.0.1:8983/solr/Channel/select?q=*:*&rows=0"
 
 ## Pendientes
 
-- Importar los cores restantes: Node, Layout, LayoutInstance, LayoutInstanceByNode, URLRedirect, User, Widget, Pages, PrintEdition, ProgrammingGuide, NewsVersion (chicos) y **Gallery / Media / News** (pesados, en background).
+- Tras un recreate de solr (pérdida de índices) repoblar con `full-import` según [SOLR.md](SOLR.md).
 - Restaurar `assetviewscounts` en Mongo para que `GetMostRead` deje de dar 204.
 - Core `Theme` sin config en el backup de Solr (solo existe el SP en SQL) — decidir si se clona de otro core.
 

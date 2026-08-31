@@ -1,0 +1,33 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+		   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+		   user="sa"
+		   password="3zx7aAY5uZp49F2wuv!9aZ"
+		   batchSize="5" />
+	<document>
+		<entity name="Author" 
+				query="exec dbo.GetAllSolrAuthor" 
+				deltaQuery="exec dbo.GetDeltaSolrAuthor" 
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrAuthor '${dih.delta.Id}'"
+				deletedPkQuery="select Id from Author where IsDeleted='true'">
+			<field column="Id" name="Id" />
+			<field column="FirstName" name="FirstName" />
+			<field column="LastName" name="LastName" />
+			<field column="Email" name="Email" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<entity name="Media" query="select SizesPaths from Media  where Id='${Author.MediaId}'">
+				<field column="SizesPaths" name="AuthorMedia"/>
+			</entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

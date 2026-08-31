@@ -1,0 +1,26 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+    <entity name="Keywords" 
+				query="exec dbo.GetAllSolrKeyword"
+				deltaQuery="exec dbo.GetDeltaSolrKeyword"
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrKeyword '${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="Name" name="Name" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="Featured" name="Featured" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

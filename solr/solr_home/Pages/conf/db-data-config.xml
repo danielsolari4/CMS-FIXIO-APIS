@@ -1,0 +1,103 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+
+	<document>
+		<entity name="Asset" 
+					query="exec dbo.GetAllSolrPages"
+					deltaQuery="exec dbo.GetDeltaSolrPages"
+					deltaImportQuery="exec dbo.GetDeltaQuerySolrPages '${dih.delta.Id}'"
+					deletedPkQuery="select Id from Asset where IsDeleted='true' AND Discriminator='Page'">
+			<field column="Id" name="Id" />
+			<field column="Status" name="Status" />
+			<field column="Version" name="Version" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="DataExtension" name="DataExtension" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="NodeDescription" name="NodeDescription" />
+			<field column="IsMicrosite" name="IsMicrosite" />
+			<field column="ParentNodeId" name="ParentNodeId" />
+			<field column="HasParentMicrosite" name="HasParentMicrosite" />
+			<field column="IsDiagrammable" name="IsDiagrammable" />
+			<entity name="AssetNode" query="select NodeId from AssetNode where AssetId='${Asset.Id}'">
+				<field column="NodeId" name="Nodes_id"/>
+				<entity name="Node_en" query="select Title from NodeContent where NodeId='${AssetNode.NodeId}' AND LanguageId='1'">
+					<field column="Title" name="Nodes_en"/>
+				</entity>
+				<entity name="Node_es" query="select Title from NodeContent where NodeId='${AssetNode.NodeId}' AND LanguageId='2'">
+					<field column="Title" name="Nodes_es"/>
+				</entity>
+				<entity name="Node_slug" query="select Description from Node where Id='${AssetNode.NodeId}'">
+					<field column="Description" name="Nodes_slug"/>
+				</entity>
+			</entity>
+			<entity name="AssetContent_en" query="select Id,Title,Description from AssetContent where AssetId='${Asset.Id}' AND LanguageId='1'">
+				<field column="Id" name="AssetContentId_en" />
+				<field column="Title" name="Title_en" />
+				<field column="Description" name="Description_en" />
+				<entity name="PageContent" query="select * from PageContent where Id='${AssetContent_en.Id}'">
+					<field column="Keywords" name="Keywords_en" />
+					<field column="Content" name="Content_en" />
+					<field column="MetaDescription" name="MetaDescription_en" />
+					<field column="MetaKeywords" name="MetaKeywords_en" />
+					<field column="MetaAuthor" name="MetaAuthor_en" />
+					<entity name="PageContentSocialNetwork" query="select SocialNetworkId,Url from PageContentSocialNetwork where PageContentId='${AssetContent_en.Id}'">
+						<field column="Url" name="SocialNetworkUrl_en"/>
+						<entity name="SocialNetwork" query="select * from SocialNetwork where Id='${PageContentSocialNetwork.SocialNetworkId}'">
+							<field column="Id" name="SocialNetworkId_en"/>
+							<field column="Name" name="SocialNetworkName_en"/>
+						</entity>
+					</entity>
+				</entity>
+			</entity>
+			<entity name="AssetContent_es" query="select Id,Title,Description from AssetContent where AssetId='${Asset.Id}' AND LanguageId='2'">
+				<field column="Id" name="AssetContentId_es" />
+				<field column="Title" name="Title_es" />
+				<field column="Description" name="Description_es" />
+				<entity name="PageContent" query="select * from PageContent where Id='${AssetContent_es.Id}'">
+					<field column="Keywords" name="Keywords_es" />
+					<field column="Content" name="Content_en" />
+					<field column="BackgroundColor" name="BackgroundColor" />
+					<field column="MetaDescription" name="MetaDescription_es" />
+					<field column="MetaKeywords" name="MetaKeywords_es" />
+					<field column="MetaAuthor" name="MetaAuthor_es" />
+					<entity name="PageContentSocialNetwork" query="select SocialNetworkId,Url from PageContentSocialNetwork where PageContentId='${Asset.Id}'">
+						<field column="Url" name="SocialNetworkUrl_es"/>
+						<entity name="SocialNetwork" query="select * from SocialNetwork where Id='${PageContentSocialNetwork.SocialNetworkId}'">
+							<field column="Id" name="SocialNetworkId_es"/>
+							<field column="Name" name="SocialNetworkName_es"/>
+						</entity>
+					</entity>
+				</entity>
+			</entity>
+			<entity name="AssetMedia" query="select MediaId, Featured  from AssetMedia where AssetId='${Asset.Id}'">
+				<field column="Featured" name="Featured_list"/>
+				<entity name="Media" query="select Id, SizesPaths from Media where Id='${AssetMedia.MediaId}'">
+					<field column="Id" name="Media_id"/>
+					<field column="SizesPaths" name="MediaSizesPaths"/>
+				</entity>
+			</entity>
+			<entity name="Page" query="select * from Page where Id='${Asset.Id}'">
+				<field column="WasPublished" name="WasPublished" />
+				<field column="PublicationUser" name="PublicationUser" />
+				<field column="PublicationDate" name="PublicationDate" />
+				<field column="ViewsCount" name="ViewsCount" />
+				<field column="VotesCount" name="VotesCount" />
+				<field column="CommentsCount" name="CommentsCount" />
+				<field column="Url" name="Url" />
+			</entity>
+    	</entity>
+	</document>
+</dataConfig>
+
+
+
+

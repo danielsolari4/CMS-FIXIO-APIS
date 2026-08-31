@@ -1,0 +1,37 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="LayoutInstance" 
+				query="exec dbo.GetAllSolrLayoutInstance"
+				deltaQuery="exec dbo.GetDeltaSolrLayoutInstance"
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrLayoutInstance '${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="NodeId" name="NodeId" />
+			<field column="Description" name="Description" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="PublicationDate" name="PublicationDate" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="Node_en" name="Node_en" />
+			<field column="Node_es" name="Node_es" />
+			<field column="NodeDescription" name="NodeDescription" />
+			<field column="NroRow" name="NroRow" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsMicrosite" name="IsMicrosite" />
+			<field column="ParentNodeId" name="ParentNodeId" />
+			<field column="HasParentMicrosite" name="HasParentMicrosite" />
+			<field column="PrintEditionId" name="PrintEditionId" />
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

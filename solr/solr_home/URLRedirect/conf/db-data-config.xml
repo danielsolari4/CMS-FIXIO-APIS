@@ -1,0 +1,27 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="URLRedirect" 
+				query="exec dbo.GetAllSolrURLRedirect" 
+				deltaQuery="exec dbo.GetDeltaSolrURLRedirect" 
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrURLRedirect '${dih.delta.Id}'"
+				deletedPkQuery="select Id from URLRedirect where IsDeleted='true'">
+			<field column="Id" name="Id" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="From" name="From" />
+			<field column="From" name="FromLower" />
+			<field column="To" name="To" />
+			<field column="CacheSolr" name="CacheSolr" />									
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

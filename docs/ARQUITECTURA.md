@@ -21,6 +21,11 @@ Config: `/etc/nginx/sites-enabled/{apife,apibe}.fixiocode.com` con `proxy_pass`,
 
 Proyecto en el droplet: **`/root/api-fe`** (`docker-compose.yml` + `.env` + carpeta `solr/`).
 
+> Config relacionada con el droplet **versionada en el repo**: `docker-compose.yml`
+> (raíz, idéntico al droplet), `deploy/droplet/.env` (credenciales reales SQL/Mongo)
+> y `solr/` (Dockerfile + `solr_home` + jar mssql-jdbc). Así el stack es reproducible
+> desde el repo sin depender solo del droplet.
+
 | Contenedor | Imagen | Puertos | Rol |
 |---|---|---|---|
 | `frontendapi` | `fixiocode/api-fe-frontendapi:latest` (build local, se transfiere) | `127.0.0.1:8080→80` | API de contenido (pública) |

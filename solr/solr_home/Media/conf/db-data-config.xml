@@ -1,0 +1,48 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="1" />
+
+	<document>
+		<entity name="Media" 
+				query="exec dbo.GetAllSolrMedia" 
+				deltaQuery="exec dbo.GetDeltaSolrMedia" 
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrMedia '${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="Title" name="Title" />
+			<field column="Caption" name="Caption" />
+			<field column="Description" name="Description" />
+			<field column="AlternativeText" name="AlternativeText" />
+			<field column="SourcePath" name="SourcePath" />
+			<field column="MediaUrl" name="MediaUrl" />
+			<field column="SizesPaths" name="SizesPaths" />
+			<field column="FileName" name="FileName" />
+			<field column="FileType" name="FileType" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="FileId" name="FileId" />
+			<field column="Keywords" name="Keywords" />
+			<field column="Version" name="Version" />
+			<field column="FileSize" name="FileSize" />
+			<field column="Height" name="Height" />
+			<field column="Width" name="Width" />
+			<field column="Featured" name="Featured" />
+			<field column="ShareCount" name="ShareCount" />
+			<field column="ViewsCount" name="ViewsCount" />
+			<field column="Discriminator" name="Discriminator" />
+      <field column="PublicationDate" name="PublicationDate" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<entity name="MediaCategory" query="select CategoryId from MediaCategory where MediaId='${Media.Id}'">
+				<entity name="Category" query="select Id,Name from Category where Id='${MediaCategory.CategoryId}'">
+					<field column="Id" name="Categories_Id"/>
+					<field column="Name" name="Categories_Name"/>
+				</entity>
+			</entity>
+    	</entity>
+	</document>
+</dataConfig>

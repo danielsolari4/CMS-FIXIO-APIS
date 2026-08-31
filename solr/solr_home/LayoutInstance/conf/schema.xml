@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solr managed schema - automatically generated - DO NOT EDIT -->
+<schema name="example" version="1.6">
+  <uniqueKey>Id</uniqueKey>
+  <fieldType name="binary" class="solr.BinaryField"/>
+  <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+  <fieldType name="date" class="solr.TrieDateField" positionIncrementGap="0" docValues="true" precisionStep="0"/>
+  <fieldType name="double" class="solr.TrieDoubleField" positionIncrementGap="0" docValues="true" precisionStep="0"/>
+  <fieldType name="float" class="solr.TrieFloatField" positionIncrementGap="0" docValues="true" precisionStep="0"/>
+  <fieldType name="int" class="solr.TrieIntField" positionIncrementGap="0" docValues="true" precisionStep="0"/>
+  <fieldType name="long" class="solr.TrieLongField" positionIncrementGap="0" docValues="true" precisionStep="0"/>
+  <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
+  <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true"/>
+  <fieldType name="tdate" class="solr.TrieDateField" positionIncrementGap="0" docValues="true" precisionStep="6"/>
+  <fieldType name="tdouble" class="solr.TrieDoubleField" positionIncrementGap="0" docValues="true" precisionStep="8"/>
+  <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.StopFilterFactory" words="lang/stopwords_en.txt" ignoreCase="true"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.EnglishPossessiveFilterFactory"/>
+      <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+      <filter class="solr.PorterStemFilterFactory"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.StopFilterFactory" words="lang/stopwords_en.txt" ignoreCase="true"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.EnglishPossessiveFilterFactory"/>
+      <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+      <filter class="solr.PorterStemFilterFactory"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_es" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.StopFilterFactory" words="lang/stopwords_es.txt" ignoreCase="true"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+      <filter class="solr.PorterStemFilterFactory"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.StopFilterFactory" words="lang/stopwords_es.txt" ignoreCase="true"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+      <filter class="solr.PorterStemFilterFactory"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.StopFilterFactory" words="stopwords.txt" ignoreCase="true"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.StopFilterFactory" words="stopwords.txt" ignoreCase="true"/>
+      <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="tfloat" class="solr.TrieFloatField" positionIncrementGap="0" docValues="true" precisionStep="8"/>
+  <fieldType name="tint" class="solr.TrieIntField" positionIncrementGap="0" docValues="true" precisionStep="8"/>
+  <fieldType name="tlong" class="solr.TrieLongField" positionIncrementGap="0" docValues="true" precisionStep="8"/>
+  
+	<!-- Author -->
+    <field name="Id" type="int" indexed="true" stored="true" required="true" multiValued="false" />
+	<field name="NodeId" type="int" indexed="true" stored="true" required="true" multiValued="false" />
+	<field name="NroRow" type="int" indexed="true" stored="true" required="true" multiValued="false" />
+    <field name="Description" type="string" indexed="true" stored="true" required="false" multiValued="false"/>
+    <field name="LastModificationDate" type="date" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="CreationUser" type="string" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="CreationDate" type="date" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="PublicationDate" type="date" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="IsDeleted" type="boolean" indexed="true" stored="true" required="false" multiValued="false"/>
+
+	<field name="IsMicrosite" type="boolean" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="IsEnabled" type="boolean" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="ParentNodeId" type="int" indexed="true" stored="true" required="false" multiValued="false" />    
+	<field name="HasParentMicrosite" type="boolean" indexed="true" stored="true" required="false" multiValued="false" />    
+	
+	<!--Node-->
+	<field name="Node_en" type="text_en" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="Node_es" type="text_es" indexed="true" stored="true" required="false" multiValued="false"/>
+	<field name="NodeDescription" type="string" indexed="true" stored="true" required="false" multiValued="false"/>
+	
+	<field name="PrintEditionId" type="int" indexed="true" stored="true" required="false" multiValued="false"/>
+	
+	<field name="_root_" type="int" docValues="false" indexed="true" stored="false"/>
+	<field name="_text_" type="text_general" multiValued="true" indexed="true" stored="true"/>
+	<field name="_version_" type="long" indexed="true" stored="false"/>
+  
+    <!-- Combined Field -->
+    <field name="textSearch" type="text_general" indexed="true" stored="true" multiValued="true" />
+  
+	<copyField source="Node_en" dest="textSearch" />
+	<copyField source="Node_es" dest="textSearch" />
+	<copyField source="Description" dest="textSearch" />
+</schema>

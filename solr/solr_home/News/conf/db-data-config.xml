@@ -1,0 +1,148 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="1" />
+
+	<document>
+		<!-- deletedPkQuery="select Id from Asset where IsDeleted='true' OR IsEnabled='false' AND Discriminator='News'" -->
+	<entity name="Asset" 
+			query="exec dbo.GetAllSolrNew"
+			deltaQuery="exec dbo.GetDeltaSolrNews"
+			deltaImportQuery="exec dbo.GetDeltaQuerySolrNews '${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="Status" name="Status" />
+			<field column="Version" name="Version" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="DataExtension" name="DataExtension" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<entity name="AccessType" query="select Name from AccessType where Id='${Asset.AccessTypeId}'">
+				<field column="Name" name="AccessType"/>
+			</entity>
+			<entity name="Page" query="select IsAlert,IsPrivate,WasPublished,PublicationUser,PublicationDate,ViewsCount,VotesCount,CommentsCount,ShareCount,Url,ShortUrl from Page where Id='${Asset.Id}'">
+				<field column="WasPublished" name="WasPublished" />
+				<field column="PublicationUser" name="PublicationUser" />
+				<field column="PublicationDate" name="PublicationDate" />
+				<field column="ViewsCount" name="ViewsCount" />
+				<field column="VotesCount" name="VotesCount" />
+				<field column="CommentsCount" name="CommentsCount" />
+				<field column="ShareCount" name="ShareCount" />
+				<field column="Url" name="Url" />
+				<field column="IsPrivate" name="IsPrivate" />
+				<field column="ShortUrl" name="ShortUrl" />
+				<field column="IsAlert" name="IsAlert" />
+
+			<entity name="News" query="select * from News where Id='${Asset.Id}'">
+				<field column="NewsSourceNewsId" name="NewsSourceNewsId" />
+				<field column="ExpirationDate" name="ExpirationDate" />
+				<field column="EditorComments" name="EditorComments" />
+				<entity name="RelatedNewsEntity" query="select RelatedAssetId from AssetAsset where AssetId='${Asset.Id}'">
+					<field column="RelatedAssetId" name="RelatedNews" />
+				</entity>
+				<entity name="AssetNode" query="select NodeId from AssetNode where AssetId='${Asset.Id}'">
+					<field column="NodeId" name="Nodes_Id" />
+					<entity name="Node_en" query="select Title from NodeContent where NodeId='${AssetNode.NodeId}' AND LanguageId='1'">
+						<field column="Title" name="Nodes_en"/>
+					</entity>
+					<entity name="Node_es" query="select Title from NodeContent where NodeId='${AssetNode.NodeId}' AND LanguageId='2'">
+						<field column="Title" name="Nodes_es"/>
+					</entity>
+					<entity name="Node_slug" query="select Description from Node where Id='${AssetNode.NodeId}'">
+						<field column="Description" name="Nodes_slug"/>
+					</entity>
+					<entity name="Node_Microsite" query="select Id from Node where Id='${AssetNode.NodeId}' AND IsEnabled='1'">
+						<field column="Id" name="Node_Microsite"/>
+					</entity>
+				</entity>
+				<entity name="AssetContent_en" query="select Id,Title,Description,Volanta,SocialNetworkTitle from AssetContent where AssetId='${Asset.Id}' AND LanguageId='1'">
+					<field column="Id" name="AssetContentId_en" />
+					<field column="Title" name="Title_en" />
+					<field column="Volanta" name="Volanta_en" />
+					<field column="SocialNetworkTitle" name="SocialNetworkTitle_en" />
+					<field column="Description" name="Description_en" />
+					<entity name="PageContent" query="select * from PageContent where Id='${AssetContent_en.Id}'">
+						<field column="Keywords" name="Keywords_en" />
+						<field column="Keywords" name="KeywordsParse_en" />
+						<field column="Content" name="Content_en" />
+						<field column="MetaDescription" name="MetaDescription_en" />
+						<field column="MetaKeywords" name="MetaKeywords_en" />
+						<field column="MetaAuthor" name="MetaAuthor_en" />
+					</entity>
+				</entity>
+				<entity name="AssetContent_es" query="select Id,Title,Description,Volanta,SocialNetworkTitle from AssetContent where AssetId='${Asset.Id}' AND LanguageId='2'">
+					<field column="Id" name="AssetContentId_es" />
+					<field column="Title" name="Title_es" />
+					<field column="Volanta" name="Volanta_es" />
+					<field column="SocialNetworkTitle" name="SocialNetworkTitle_es" />
+					<field column="Description" name="Description_es" />
+					<entity name="PageContent" query="select * from PageContent where Id='${AssetContent_es.Id}'">
+						<field column="Keywords" name="Keywords_es" />
+						<field column="Keywords" name="KeywordsParse_es" />
+						<field column="Content" name="Content_en" />
+						<field column="MetaDescription" name="MetaDescription_es" />
+						<field column="MetaKeywords" name="MetaKeywords_es" />
+						<field column="MetaAuthor" name="MetaAuthor_es" />
+					</entity>
+				</entity>
+				<entity name="Template" query="select tp.Id, tp.Name, tp.Class from AssetContent ac INNER JOIN Template tp on ac.TemplateId = tp.Id where AssetId='${Asset.Id}'">
+					<field column="Id" name="TemplateId" />
+					<field column="Name" name="TemplateName" />
+					<field column="Class" name="TemplateClass" />
+				</entity>
+				<entity name="AssetMedia" query="select MediaId from AssetMedia where AssetId='${Asset.Id}'">
+					<entity name="Media" query="select top 1 SizesPaths,Discriminator,Description,MediaUrl from Media  where Id='${AssetMedia.MediaId}'">
+						<field column="SizesPaths" name="MediaSizesPaths"/>
+						<field column="Discriminator" name="MediaDiscriminator"/>
+						<field column="Description" name="MediaDescription"/>
+						<field column="MediaUrl" name="MediaUrl"/>
+					</entity>
+				</entity>
+				<entity name="PrintEdition" query="select(select * from PrintEditionNew where NewId='${Asset.Id}' FOR JSON AUTO)AS Result">
+					<field column="Result" name="PrintEdition" />
+				</entity>
+				<entity name="PrintEditionId" query="select PrintEditionId from PrintEditionNew where NewId='${Asset.Id}'">
+					<field column="PrintEditionId" name="PrintEditionId" />
+				</entity>
+				<entity name="AssetJson" query="select (select [Json] as AssetJson FROM AssetJson where AssetId='${Asset.Id}' FOR JSON PATH) as Result ">
+					<field column="Result" name="AssetJson" />
+				</entity>
+				<entity name="AssetGallery" query="select GalleryId from AssetGallery where AssetId='${Asset.Id}'">
+					<field column="GalleryId" name="Galleries"/>
+					<entity name="Gallery" query="SELECT * FROM Gallery where Id = '${AssetGallery.GalleryId}'">
+						<field column="Id" name="GalleryId" />
+						<field column="Name" name="GalleryName" />
+						<field column="IsEnabled" name="GalleryIsEnabled" />
+						<entity name="MediaGallery" query="select MediaId from MediaGallery where GalleryId='${Gallery.Id}' Order By [Order]">
+							<entity name="GalleryMedia" query="select Id,SizesPaths,ISNULL(MediaUrl, '') MediaUrl,Description from Media where Id='${MediaGallery.MediaId}'">
+								<field column="Id" name="MediaGalleryId" />
+								<field column="SizesPaths" name="GalleryMediaSizesPaths" />
+								<field column="MediaUrl" name="GalleryMediaUrls" />
+								<field column="Description" name="GalleryDescription" />
+							</entity>
+						</entity>
+					</entity>
+				</entity>
+				<entity name="AssetAuthor" query="select AuthorId from NewsAuthor where NewsId='${Asset.Id}'">
+					<entity name="Author" query="select FirstName+ ' ' + LastName as Name, MediaId, Id from Author where Id='${AssetAuthor.AuthorId}'">
+						<field column="Id" name="AuthorId"/>
+						<field column="Name" name="AuthorName"/>
+						<entity name="Media" query="select SizesPaths from Media  where Id='${Author.MediaId}'">
+							<field column="SizesPaths" name="AuthorMedia"/>
+						</entity>
+					</entity>
+				</entity>
+			</entity>
+		  </entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

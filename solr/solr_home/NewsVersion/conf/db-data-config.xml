@@ -1,0 +1,42 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="1" />
+
+	<document>
+		<entity name="Asset" query="SELECT [Id]
+      ,[NewsId]
+      ,[Title]
+      ,[Content]
+      ,[LastModificationDate]
+      ,[LastModificationUser]
+      ,[CacheSolr]
+      ,[Status]
+  FROM [News]" deltaQuery="SELECT [Id]
+	into #tmp_ids
+	FROM News
+	WHERE CacheSolr = 0
+	select Id from #tmp_ids
+	UPDATE News
+	Set CacheSolr = 1
+	where id in (select id from #tmp_ids)
+	 drop table #tmp_ids" deltaImportQuery="SET NOCOUNT ON; select * from News where Id='${dih.delta.Id}'">
+			<!--deletedPkQuery="select Id from News where IsDeleted='true' AND Discriminator='News'" -->
+			<field column="Id" name="Id" />
+			<field column="NewsId" name="NewsId" />
+			<field column="Content" name="Content" />
+			<field column="Title" name="Title" />
+			<field column="Status" name="Status" />
+
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

@@ -1,0 +1,24 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="Menu" 
+				query="SELECT * FROM [Menu]" 
+				deltaQuery="SELECT [Id] into #tmpMenu_ids FROM Menu WHERE CacheSolr = 0 
+					select Id from #tmpMenu_ids
+						UPDATE Menu
+						Set CacheSolr = 1
+					where id in (select id from #tmpMenu_ids)
+					drop table #tmpMenu_ids" 
+				deltaImportQuery="SET NOCOUNT ON; select * from Menu where Id='${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="MenuType" name="MenuType" />
+			<field column="Structure" name="Structure" />
+		</entity>
+	</document>
+</dataConfig>

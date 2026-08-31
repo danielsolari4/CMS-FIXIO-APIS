@@ -1,0 +1,49 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="User" 
+				query="exec dbo.GetAllSolrUser" 
+				deltaQuery="exec dbo.GetDeltaSolrUser" 
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrUser '${dih.delta.Id}'"
+				deletedPkQuery="select Id from [User] where IsDeleted='true'">
+			<field column="Id" name="Id" />
+			<field column="Email" name="Email" />
+			<field column="EmailConfirmed" name="EmailConfirmed" />
+			<field column="PhoneNumber" name="PhoneNumber" />
+			<field column="UserName" name="UserName" />
+			<field column="FirstName" name="FirstName" />
+			<field column="LastName" name="LastName" />
+			<field column="Country" name="Country" />
+			<field column="State" name="State" />
+			<field column="City" name="City" />
+			<field column="Address" name="Address" />
+			<field column="ZipCode" name="ZipCode" />
+			<field column="CellPhone" name="CellPhone" />
+			<field column="LanguageId" name="LanguageId" />
+			<field column="TimeZoneId" name="TimeZoneId" />
+			<field column="Description" name="Description" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="ProfileImagePath" name="ProfileImagePath" />
+			<field column="Discriminator" name="Discriminator" />
+			<entity name="UserRoles" query="select RoleId from UserRole where UserId='${User.Id}'">
+				<entity name="Role" query="select Name from Role where Id='${UserRoles.RoleId}'">
+					<field column="Name" name="Roles" />
+				</entity>
+			</entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+

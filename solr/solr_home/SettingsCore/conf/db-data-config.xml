@@ -1,0 +1,24 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="Settings" 
+				query="SELECT [Id],[Name],[Value] FROM [Settings]" 
+				deltaQuery="SELECT [Id] into #tmpSettings_ids FROM Settings WHERE CacheSolr = 0 
+					select Id from #tmpSettings_ids
+						UPDATE Settings
+						Set CacheSolr = 1
+					where id in (select id from #tmpSettings_ids)
+					drop table #tmpSettings_ids" 
+				deltaImportQuery="SET NOCOUNT ON; select * from Settings where Id='${dih.delta.Id}'">
+			<field column="Id" name="Id" />
+			<field column="Name" name="Name" />
+			<field column="Value" name="Value" />
+		</entity>
+	</document>
+</dataConfig>

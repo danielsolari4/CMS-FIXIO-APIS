@@ -1,0 +1,65 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="ProgrammingGuide" 
+				query="exec dbo.GetAllSolrProgrammingGuide"
+				deltaQuery="exec dbo.GetDeltaSolrProgrammingGuide"
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrProgrammingGuide '${dih.delta.Id}'"
+				deletedPkQuery="select Id from ProgrammingGuide WITH(NOLOCK) where IsDeleted='true'">
+			<field column="Id" name="Id" />
+			<field column="ProgramName" name="ProgramName" />
+			<field column="Url" name="Url" />
+			<field column="MobileUrl" name="MobileUrl" />
+			<field column="SecondaryUrl" name="SecondaryUrl" />
+			<field column="IsDeleted" name="IsDeleted" />
+			<field column="IsEnabled" name="IsEnabled" />
+			<field column="Featured" name="Featured" />
+			<field column="CreationUser" name="CreationUser" />
+			<field column="CreationDate" name="CreationDate" />
+			<field column="LastModificationDate" name="LastModificationDate" />
+			<field column="LastModificationUser" name="LastModificationUser" />
+			<entity name="ProgrammingGuideMedia" query="select MediaId from ProgrammingGuideMedia WITH(NOLOCK) where ProgrammingGuideId='${ProgrammingGuide.Id}'">
+				<entity name="Media" query="select Id,SizesPaths from Media WITH(NOLOCK) where Id='${ProgrammingGuideMedia.MediaId}'">
+					<field column="Id" name="ProgrammingGuideMediaId" />
+					<field column="SizesPaths" name="MediaSizesPaths" />
+				</entity>
+			</entity>
+			<entity name="ProgrammingGuideNode" query="select NodeId from ProgrammingGuideNode WITH(NOLOCK) where ProgrammingGuideId='${ProgrammingGuide.Id}'">
+				<entity name="Node" query="select Id from Node WITH(NOLOCK) where Id='${ProgrammingGuideMedia.NodeId}'">
+					<field column="Id" name="ProgrammingGuideNodeId" />
+				</entity>
+			</entity>
+			<entity name="NodeProgram" query="select Id, Description from Node WITH(NOLOCK) where Id='${ProgrammingGuide.NodeId}'">
+					<field column="Id" name="NodeId" />
+					<field column="Description" name="NodeSlug"/>
+			</entity>
+			<entity name="ProgramGallery" query="select GalleryId from ProgramGallery WITH(NOLOCK) where ProgramId='${ProgrammingGuide.Id}' order by [Order]">
+				<field column="GalleryId" name="GalleryId" />
+			</entity>
+			<entity name="Schedule" query="select * from ProgrammingGuideSchedule WITH(NOLOCK) where ProgrammingGuideId='${ProgrammingGuide.Id}'">
+				<field column="Id" name="ScheduleId" />
+				<field column="InitHour" name="InitHour" />
+				<field column="InitMinute" name="InitMinute" />
+				<field column="EndHour" name="EndHour" />
+				<field column="EndMinute" name="EndMinute" />
+				<field column="Day" name="Day" />
+			</entity>
+			<entity name="ProgrammingGuideChannel" query="select Channel from ProgrammingGuide WITH(NOLOCK) where Id='${ProgrammingGuide.Id}'">
+				<entity name="ChannelInfo" query="select Id,Name from Channel WITH(NOLOCK) where Id='${ProgrammingGuide.Channel}'">
+					<field column="Id" name="ChannelId" />
+					<field column="Name" name="ChannelName" />
+				</entity>
+			</entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+

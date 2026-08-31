@@ -1,0 +1,34 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+                   driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                   url="jdbc:sqlserver://sqlserver:1433;databaseName=CMS_STG_TT_NET_CORE;"
+                   user="sa"
+                   password="3zx7aAY5uZp49F2wuv!9aZ"
+                   batchSize="5" />
+		   
+	<document>
+		<entity name="PrintEdition" 
+				query="exec dbo.GetAllSolrPrintEdition"
+				deltaQuery="exec dbo.GetDeltaSolrPrintEdition"
+				deltaImportQuery="exec dbo.GetDeltaQuerySolrPrintEdition '${dih.delta.Id}'">
+				<field column="Id" name="Id" />
+				<field column="Edition" name="Edition" />
+				<field column="NodeId" name="NodeId" />
+				<field column="Identifier" name="Identifier" />
+				<field column="Structure" name="Structure" />
+				<field column="MigrationDate" name="MigrationDate" />
+				<field column="CreationDate" name="CreationDate" />
+				<field column="LastModificationDate" name="LastModificationDate" />
+				<field column="IsPublished" name="IsPublished" />
+				<entity name="PrintEditionNews" query="select * from PrintEditionNew where PrintEditionId='${PrintEdition.Id}'">			
+					<field column="PrintEditionId" name="PrintEditionId" />
+					<field column="NewId" name="NewId" />
+					<field column="Page" name="Pages" />
+			  </entity>
+		</entity>
+	</document>
+</dataConfig>
+
+
+
+
