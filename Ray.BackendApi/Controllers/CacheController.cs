@@ -50,5 +50,16 @@ namespace Ray.BackendApi.Controllers
                 return Ok(CMSResponse(result));
             });
         }
+
+        [HttpPost]
+        [Route("Redirects")]
+        public async Task<IActionResult> Redirects()
+        {
+            return await TryJsonResultAsync(async () =>
+            {
+                var result = await _cacheInvalidation.InvalidateRedirectsNow("manual redirects");
+                return Ok(CMSResponse(result));
+            });
+        }
     }
 }

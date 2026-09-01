@@ -39,15 +39,67 @@ namespace Ray.Utils.Cache
             var mode = string.IsNullOrWhiteSpace(token) ? CacheInvalidationMode.LegacyNext : CacheInvalidationMode.Batch;
             result.Mode = mode.ToString();
 
-            var stopwatch = Stopwatch.StartNew();
+var stopwatch = Stopwatch.StartNew();
             for (var i = 0; i < instances.Count; i++)
             {
                 var purgeCdn = GetPurgeCdn(appSettings, i == 0);
-                var instance = mode == CacheInvalidationMode.Batch
-                    ? await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings)
-                    : await SendLegacy(instances[i], normalized, reason, kind, appSettings);
+                CacheInvalidationInstanceResult instance;
+
+                if (mode == CacheInvalidationMode.Batch)
+                {
+                    instance = await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings);
+
+                    // Redundancia por diseño: si la forma moderna falla (front caído, token o CDN del
+                    // frente), se cae al legacy /api/revalidate para no dejar el caché sin purgar.
+                    if (!instance.Success)
+                    {
+                        var legacy = await SendLegacy(instances[i], normalized, reason, kind, appSettings);
+                        legacy.UsedFallbackMode = legacy.Success ? "batch→legacy" : "batch→legacy(failed)";
+                        instance = legacy;
+                    }
+                }
+                else
+                {
+                    instance = await SendLegacy(instances[i], normalized, reason, kind, appSettings);
+                }
 
                 result.Instances.Add(instance);
+            }
+
+            stopwatch.Stop();
+            result.ElapsedMs = stopwatch.ElapsedMilliseconds;
+            return result;
+        }
+
+        /// <summary>
+        /// Limpia el caché del middleware de redirects en cada nodo del front. NO tiene variante
+        /// legacy (el /api/revalidate viejo no purgeaba redirects), así que requiere token.
+        /// Path del endpoint configurable vía FrontEnd__CacheInvalidation__RedirectsEndpoint.
+        /// </summary>
+        public static async Task<CacheInvalidationResult> InvalidateRedirects(AppSettings appSettings, string reason = null)
+        {
+            var result = new CacheInvalidationResult { Reason = reason };
+
+            var instances = GetFrontendInstances(appSettings);
+            if (instances.Count == 0)
+            {
+                CMSLogger.Error("[cache-invalidation] no frontend url configured for redirects.");
+                return result;
+            }
+
+            var token = GetToken(appSettings);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                result.Mode = "Redirects(no-token)";
+                CMSLogger.Error("[cache-invalidation] redirects invalidation requires FrontEnd__CacheInvalidation__Token; there is no legacy fallback for /api/redirects/cache.");
+                return result;
+            }
+
+            result.Mode = "Redirects";
+            var stopwatch = Stopwatch.StartNew();
+            foreach (var instance in instances)
+            {
+                result.Instances.Add(await PostRedirects(instance, token, appSettings));
             }
 
             stopwatch.Stop();
@@ -123,6 +175,24 @@ namespace Ray.Utils.Cache
                 instanceResult.Error = string.Join(" | ", errors);
 
             return instanceResult;
+        }
+
+        private static async Task<CacheInvalidationInstanceResult> PostRedirects(string baseUrl, string token, AppSettings appSettings)
+        {
+            var endpointPath = GetSetting("FrontEnd__CacheInvalidation__RedirectsEndpoint");
+            if (string.IsNullOrWhiteSpace(endpointPath))
+                endpointPath = "/api/redirects/cache";
+
+            var url = baseUrl.TrimEnd('/') + endpointPath;
+            return await SendWithRetries(() =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+                request.Headers.Add("Authorization", "Bearer " + token);
+                return request;
+            }, baseUrl, appSettings);
         }
 
         private static async Task<CacheInvalidationInstanceResult> SendWithRetries(Func<HttpRequestMessage> requestFactory, string baseUrl, AppSettings appSettings)
@@ -301,5 +371,6 @@ namespace Ray.Utils.Cache
         public int StatusCode { get; set; }
         public int Attempts { get; set; }
         public string Error { get; set; }
+        public string UsedFallbackMode { get; set; }
     }
 }

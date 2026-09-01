@@ -43,7 +43,8 @@ namespace Ray.Managers
         void InvalidatePaths(IEnumerable<string> paths, string reason = null);
         Task<CacheInvalidationResult> InvalidateNewsNow(int newsId, NewsCacheSnapshot previous = null, string reason = null);
         Task<CacheInvalidationResult> InvalidateLayoutNow(int nodeId, string reason = null);
-        Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, string reason = null);
+Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, string reason = null);
+        Task<CacheInvalidationResult> InvalidateRedirectsNow(string reason = null);
         Task<int> ProcessQueue(int maxItems = 25);
         Task<int> RecoverQueue();
     }
@@ -164,6 +165,11 @@ namespace Ray.Managers
         public async Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, string reason = null)
         {
             return await FrontendCacheClient.Invalidate(paths, _appSettings, reason ?? "manual paths");
+        }
+
+        public async Task<CacheInvalidationResult> InvalidateRedirectsNow(string reason = null)
+        {
+            return await FrontendCacheClient.InvalidateRedirects(_appSettings, reason ?? "manual redirects");
         }
 
         private async Task<List<string>> BuildNewsPaths(int newsId, NewsCacheSnapshot previous)
