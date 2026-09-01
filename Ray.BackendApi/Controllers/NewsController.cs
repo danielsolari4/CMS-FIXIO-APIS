@@ -204,7 +204,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [Route("PublishArray")]
-        public async Task<IActionResult> PublishArray(List<int> ids)
+        public async Task<IActionResult> PublishArray([FromBody] List<int> ids)
         {
             return await TryJsonResultAsync(async () =>
             {

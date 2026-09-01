@@ -74,7 +74,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(CreatePageDtoBindingModel pageDto)
+        public async Task<IActionResult> Post([FromBody] CreatePageDtoBindingModel pageDto)
         {
             return await TryJsonResultAsync(async () =>
                 {
@@ -88,7 +88,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Put(UpdatePageDtoBindingModel pageDto)
+        public async Task<IActionResult> Put([FromBody] UpdatePageDtoBindingModel pageDto)
         {
             return await TryJsonResultAsync(async () =>
                 {

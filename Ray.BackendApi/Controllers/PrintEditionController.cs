@@ -69,7 +69,7 @@ namespace Ray.BackendApi.Controllers
             });
         }
 
-        public async Task<IActionResult> Post(PrintEditionDto printEdition)
+        public async Task<IActionResult> Post([FromBody] PrintEditionDto printEdition)
         {
             return await TryJsonResultAsync(async () =>
             {

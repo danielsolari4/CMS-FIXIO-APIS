@@ -77,7 +77,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(WidgetDto widgetDto)
+        public async Task<IActionResult> Post([FromBody] WidgetDto widgetDto)
         {
             return await TryJsonResultAsync(async () =>
             {
@@ -91,7 +91,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Put(WidgetDto widgetDto)
+        public async Task<IActionResult> Put([FromBody] WidgetDto widgetDto)
         {
             return await TryJsonResultAsync(async () =>
             {
