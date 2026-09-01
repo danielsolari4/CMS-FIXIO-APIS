@@ -75,8 +75,13 @@ function Invoke-Native {
 }
 
 if (-not $WhatIf) {
-    docker info *> $null
-    if ($LASTEXITCODE -ne 0) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & docker info *> $null
+    $dockerInfoExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorActionPreference
+
+    if ($dockerInfoExitCode -ne 0) {
         throw 'Docker Desktop no está corriendo. Levantalo y volvé a ejecutar.'
     }
 }

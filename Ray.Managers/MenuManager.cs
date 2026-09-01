@@ -88,17 +88,21 @@ namespace Ray.Managers
 
             SolrResponse settings = JsonConvert.DeserializeObject<SolrResponse>(stringJson);
 
-            if (settings == null)
+            if (settings?.response?.docs == null || settings?.response?.docs.Count == 0)
                 return null;
 
-            var itemsSer = JsonConvert.SerializeObject(settings?.response?.docs[0].Structure);
-            var items = JsonConvert.DeserializeObject<System.Collections.Generic.List<ItemMenu>>(settings?.response?.docs[0].Structure.ToString());
-            var val = settings?.response?.docs?.Count > 0 ? new MenuJson
+            var structure = settings.response.docs[0].Structure?.ToString();
+
+            if (string.IsNullOrWhiteSpace(structure))
+                return null;
+
+            var items = JsonConvert.DeserializeObject<System.Collections.Generic.List<ItemMenu>>(structure);
+            var val = new MenuJson
             {
-                Id = settings?.response?.docs[0].Id,
-                Type = settings?.response?.docs[0].MenuType,
+                Id = settings.response.docs[0].Id,
+                Type = settings.response.docs[0].MenuType,
                 Items = items
-            } : null;
+            };
 
             if (val == null)
                 return null;
@@ -114,12 +118,10 @@ namespace Ray.Managers
             if (items == null) return;
             foreach (var it in items)
             {
-                if (it == null) continue;
+                if (it == null || it.Menu == null) continue;
 
                 if (it.Menu.MenuType == (int)MenuItemType.Internal)
                 {
-                    if ((InternalItem) it.Menu == null) continue;
-
                     var nde = await _nodeRepository.GetById(((InternalItem)it.Menu).NodeId);
                     it.Menu.Url = $"/{nde?.Description}";
                 }
