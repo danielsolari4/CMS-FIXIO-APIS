@@ -51,7 +51,7 @@ namespace Ray.BackendApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Post(SettingsDto settingsDto)
+        public async Task<IActionResult> Post([FromBody] SettingsDto settingsDto)
         {
             return await TryJsonResultAsync(async () =>
             {
@@ -67,7 +67,7 @@ namespace Ray.BackendApi.Controllers
 
 
         [HttpPut]
-        public async Task<IActionResult> Put(SettingsDto settingsDto)
+        public async Task<IActionResult> Put([FromBody] SettingsDto settingsDto)
         {
             return await TryJsonResultAsync(async () =>
             {
@@ -81,7 +81,7 @@ namespace Ray.BackendApi.Controllers
         }
 
         [HttpDelete, Route("Delete")]
-        public async Task<IActionResult> Delete(SettingsDto settingsDto)
+        public async Task<IActionResult> Delete([FromBody] SettingsDto settingsDto)
         {
             return await TryJsonResultAsync(async () =>
             {

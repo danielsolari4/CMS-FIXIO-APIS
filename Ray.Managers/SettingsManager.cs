@@ -61,6 +61,9 @@ namespace Ray.Managers
             if (dto == null)
                 throw new EntityException("dto");
 
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new EntityException("Name");
+
             if (!(await _repository.Get(x => x.Name == dto.Name)).Any())
             {
                 var entity = dto.Map();

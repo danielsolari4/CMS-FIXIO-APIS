@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Ray.Dtos;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace Ray.BackendApi.Controllers
             return response;
         }
 
+        [NonAction]
         public LoggedUserDto GetLoggedUser()
         {
             if (User == null) return null;
