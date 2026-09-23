@@ -147,25 +147,50 @@
         "Name": "component--small",
         "Description": "Simple",
         "Icon": "mdi mdi-image-size-select-small",
-        "Id": 1
+        "Id": 1,
+        "GroupCssId": 1
       },
       {
         "Name": "component--medium",
         "Description": "Imagen Destacada",
         "Icon": "mdi mdi-image-size-select-large",
-        "Id": 2
+        "Id": 2,
+        "GroupCssId": 1
       },
       {
         "Name": "component--big",
         "Description": "Destacado",
         "Icon": "mdi mdi-image-size-select-actual",
-        "Id": 3
+        "Id": 3,
+        "GroupCssId": 1
       },
       {
         "Name": "component--no-image",
         "Description": "No Image",
         "Icon": "mdi mdi-image-off",
-        "Id": 4
+        "Id": 4,
+        "GroupCssId": 1
+      },
+      {
+        "Name": "component--variant-1",
+        "Description": "Variante 1",
+        "Icon": "mdi mdi-numeric-1-box",
+        "Id": 5,
+        "GroupCssId": 2
+      },
+      {
+        "Name": "component--variant-2",
+        "Description": "Variante 2",
+        "Icon": "mdi mdi-numeric-2-box",
+        "Id": 6,
+        "GroupCssId": 2
+      },
+      {
+        "Name": "component--variant-3",
+        "Description": "Variante 3",
+        "Icon": "mdi mdi-numeric-3-box",
+        "Id": 7,
+        "GroupCssId": 2
       }
     ],
     "Types": [
