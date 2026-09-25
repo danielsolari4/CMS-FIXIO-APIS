@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-var appsettingsPath = args.Length > 0 ? args[0] : Path.Combine("Ray.BackendApi", "appsettings.json");
+var appsettingsPath = args.Length > 0 ? args[0] : Path.Combine("Rino.BackendApi", "appsettings.json");
 
 using var json = JsonDocument.Parse(File.ReadAllText(appsettingsPath));
 var appSettings = json.RootElement.TryGetProperty("AppSettings", out var pascalAppSettings)

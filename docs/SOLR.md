@@ -96,12 +96,12 @@ Los imports se lanzan mejor con un script (`/root/run_imports.sh` en el droplet)
 ## Integración con la aplicación
 
 - Las APIs leen `appSettings__solr__url = http://solr:8983/solr/` (env del compose). Ya hay prueba end-to-end por HTTPS (`/api/Keyword/GetAllSolr`, `/api/Channel/GetChannels`, etc.).
-- `Ray.Utils/Solr/SolrHelper.cs` construye la URL por core según las claves `appSettings.solr.solrCore.*` de `appsettings.json` (p. ej. `theme: "Theme"`, `news: "News"`).
+- `Rino.Utils/Solr/SolrHelper.cs` construye la URL por core según las claves `appSettings.solr.solrCore.*` de `appsettings.json` (p. ej. `theme: "Theme"`, `news: "News"`).
 - La app dispara `delta-import`/`full-import` desde la API (ej.: `SolrHelper.DataImport(...)` en `AccountController`, `KeywordController`) y `InternalSyncSolrByNode` para layouts.
 
 ## Skyline de todo lo que la app necesita de Solr
 
-`/api/<Controller>/GetAllSolr` (o equivalentes) por core en `Ray.FrontendApi/Controllers/*.cs`. `SitemapHelper` y `NewsController` leen `NODE`, `NEWS` y `MEDIA` para sitemaps y "últimas noticias/videos".
+`/api/<Controller>/GetAllSolr` (o equivalentes) por core en `Rino.FrontendApi/Controllers/*.cs`. `SitemapHelper` y `NewsController` leen `NODE`, `NEWS` y `MEDIA` para sitemaps y "últimas noticias/videos".
 
 ## Gaps conocidos
 

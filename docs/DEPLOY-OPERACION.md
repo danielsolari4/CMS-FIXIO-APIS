@@ -49,13 +49,13 @@ Pruebas funcionales por HTTPS:
 
 ```bash
 # API pública de contenido (datos reales desde Solr)
-curl -s "https://apife.fixiocode.com/api/Keyword/GetAllSolr?q=*:*&rows=5"
-curl -s "https://apife.fixiocode.com/api/Category/GetAllSolr?q=*:*&rows=5"
-curl -s "https://apife.fixiocode.com/api/Channel/GetChannels?q=*:*&rows=5"
-curl -s "https://apife.fixiocode.com/api/Author/GetAllSolr?q=IsEnabled:true&rows=5"
+curl -s "https://apife.rinocode.com/api/Keyword/GetAllSolr?q=*:*&rows=5"
+curl -s "https://apife.rinocode.com/api/Category/GetAllSolr?q=*:*&rows=5"
+curl -s "https://apife.rinocode.com/api/Channel/GetChannels?q=*:*&rows=5"
+curl -s "https://apife.rinocode.com/api/Author/GetAllSolr?q=IsEnabled:true&rows=5"
 
 # Backend protegido por JWT (401 = JWT OK, solo falla la auth)
-curl -s -o /dev/null -w "%{http_code}" "https://apibe.fixiocode.com/api/Account/UserInfo"
+curl -s -o /dev/null -w "%{http_code}" "https://apibe.rinocode.com/api/Account/UserInfo"
 
 # Solr directo (solo en el droplet)
 curl -s "http://127.0.0.1:8983/solr/Channel/select?q=*:*&rows=0"

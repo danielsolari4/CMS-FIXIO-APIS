@@ -1,5 +1,5 @@
 param(
-    [string]$LegacyRoot = "C:\Workspace All\Workspace-Ray\git\Apis\Apis\Trunk",
+    [string]$LegacyRoot = "C:\Workspace All\Workspace-Rino\git\Apis\Apis\Trunk",
     [string]$CurrentRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [switch]$StrictRoutes
 )
@@ -10,12 +10,12 @@ $ProjectPairs = @(
     @{
         Name = "BackendApi"
         LegacyControllers = "CMS.BackendAPI\Controllers"
-        CurrentControllers = "Ray.BackendApi\Controllers"
+        CurrentControllers = "Rino.BackendApi\Controllers"
     },
     @{
         Name = "FrontendApi"
         LegacyControllers = "CMS.FrontendAPI\Controllers"
-        CurrentControllers = "Ray.FrontendApi\Controllers"
+        CurrentControllers = "Rino.FrontendApi\Controllers"
     }
 )
 
@@ -266,7 +266,7 @@ foreach ($pair in $ProjectPairs) {
     }
 }
 
-$mapperDir = Join-Path $CurrentRoot "Ray.Managers\MapperProfiles"
+$mapperDir = Join-Path $CurrentRoot "Rino.Managers\MapperProfiles"
 if (Test-Path $mapperDir) {
     foreach ($file in Get-ChildItem $mapperDir -Filter "*.cs" -File) {
         $lines = Get-Content $file.FullName

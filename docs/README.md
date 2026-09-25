@@ -16,7 +16,7 @@ Resumen de una mirada:
                   │
             nginx (droplet)
         ┌─────────┴──────────┐
-  apife.fixiocode.com   apibe.fixiocode.com
+  apife.rinocode.com   apibe.rinocode.com
      → 127.0.0.1:8080      → 127.0.0.1:8081
         frontendapi          backendapi
         └────────┬─────────────┘

@@ -1,0 +1,50 @@
+using Rino.Dtos.Components;
+using Rino.Dtos.JsonEntities;
+
+namespace Rino.Dtos.Factories
+{
+    public static class ComponentFactory
+    {
+        public static ComponentBaseDto GetInstance(int componentTypeId)
+        {
+            var type = (ComponentType)componentTypeId;
+            switch (type)
+            {
+                case ComponentType.New: return new ComponentNewDto();
+                case ComponentType.DataFactory: return new ComponentDataFactoryDto();
+                case ComponentType.Video: return new ComponentVideoDto();
+                case ComponentType.Widget: return new ComponentWidgetDto();
+                case ComponentType.LastNews: return new ComponentLastNewsDto();
+                case ComponentType.RankingNews: return new ComponentRankingNewsDto();
+                case ComponentType.FrontCoverPrintEdition: return new ComponentFrontCoverPrintEditionDto();
+                case ComponentType.FeaturedNews: return new ComponentFeaturedNewsDto();
+                case ComponentType.Gallery: return new ComponentGalleryDto();
+                case ComponentType.Section: return new ComponentSectionDto();
+                case ComponentType.Shorts: return new ComponentShortsDto();
+                default:
+                    return null;
+            }
+        }
+
+        public static ComponentInstanceBaseJson GetJsonInstance(int componentTypeId)
+        {
+            var type = (ComponentType)componentTypeId;
+            switch (type)
+            {
+                case ComponentType.New: return new ComponentInstanceNewJson();
+                case ComponentType.DataFactory: return new ComponentInstanceDataFactoryJson();
+                case ComponentType.Video: return new ComponentInstanceVideoJson();
+                case ComponentType.Widget: return new ComponentInstanceWidgetJson();
+                case ComponentType.LastNews: return new ComponentInstanceLastNewsJson();
+                case ComponentType.RankingNews: return new ComponentInstanceRankingNewsJson();
+                case ComponentType.FrontCoverPrintEdition: return new ComponentFrontCoverPrintEditionJson();
+                case ComponentType.FeaturedNews: return new ComponentInstanceFeaturedNewsJson();
+                case ComponentType.Gallery: return new ComponentInstanceGalleryJson();
+                case ComponentType.Section: return new ComponentInstanceSectionJson();
+                case ComponentType.Shorts: return new ComponentInstanceShortsJson();
+                default:
+                    return null;
+            }
+        }
+    }
+}

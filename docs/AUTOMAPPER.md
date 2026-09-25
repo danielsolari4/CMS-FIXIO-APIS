@@ -35,7 +35,7 @@ Reglas de oro:
 2. Cada mapa usa una variable **única** (`m1, m2, m3, ...`) por archivo → se renumeran por archivo para evitar CS0128.
 3. `CreateMap<A, B>().ForAllMembers(...)` encadenado queda **prohibido**.
 
-## Archivos tocados (17 perfiles en `Ray.Managers/MapperProfiles/`)
+## Archivos tocados (17 perfiles en `Rino.Managers/MapperProfiles/`)
 
 `AuthorProfile, CategoryProfile, GalleryProfile, KeywordProfile, LayoutInstanceProfile, LayoutProfile, MediaProfile, NewsProfile, NewsSourceProfile, NodeProfile, PageProfile, ProgrammingGuideProfile, RoleProfile, TemplateProfile, ThemeProfile, URLRedirectProfile, UserProfile`
 
@@ -46,7 +46,7 @@ El estado correcto se valida así (PowerShell):
 ```powershell
 # 1) No debe quedar ninguna cadena encadenada rota:
 #    ningún "CreateMap<T,U>().ForAllMembers(..." ni ".ForAllMembers(...).ForMember(...".
-rg -n "CreateMap\(<[^)]+\)>?\s*\.\s*ForAllMembers|ForAllMembers\([^)]*\)\s*\.[A-Za-z]" Ray.Managers/MapperProfiles
+rg -n "CreateMap\(<[^)]+\)>?\s*\.\s*ForAllMembers|ForAllMembers\([^)]*\)\s*\.[A-Za-z]" Rino.Managers/MapperProfiles
 #    resultado esperado: sin matches (los ForAllMembers van en línea propia).
 
 # 2) En cada archivo, las variables `m#` deben ser únicas y el recuento
@@ -59,7 +59,7 @@ Referencia rápida de contadores por perfil (resultado del arreglo `renumber_map
 ## Despliegue y prueba
 
 ```powershell
-scp "Ray.Managers\MapperProfiles\*.cs" root@159.223.183.214:/root/api-fe/Ray.Managers/MapperProfiles/
+scp "Rino.Managers\MapperProfiles\*.cs" root@159.223.183.214:/root/api-fe/Rino.Managers/MapperProfiles/
 ssh root@159.223.183.214 "cd /root/api-fe && docker compose up -d --build frontendapi backendapi"
 ```
 

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rino.Dtos\Rino.Dtos.csproj" />
+    <ProjectReference Include="..\Rino.Model\Rino.Model.csproj" />
+    <ProjectReference Include="..\Rino.Utils\Rino.Utils.csproj" />
+  </ItemGroup>
+
+</Project>

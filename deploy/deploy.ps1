@@ -43,8 +43,8 @@ $DropletDir = '/root/api-fe'
 $Remote     = "$User@$Ip"
 
 $ImageMap = @{
-    'frontendapi' = 'fixiocode/api-fe-frontendapi:latest'
-    'backendapi'  = 'fixiocode/api-fe-backendapi:latest'
+    'frontendapi' = 'rinocode/api-fe-frontendapi:latest'
+    'backendapi'  = 'rinocode/api-fe-backendapi:latest'
 }
 $BaseMap = @{
     'frontendapi' = 'api-fe-frontendapi'
@@ -106,8 +106,8 @@ try {
     }
 
     $dockerfileMap = @{
-        'frontendapi' = 'Ray.FrontendApi/Dockerfile'
-        'backendapi'  = 'Ray.BackendApi/Dockerfile'
+        'frontendapi' = 'Rino.FrontendApi/Dockerfile'
+        'backendapi'  = 'Rino.BackendApi/Dockerfile'
     }
 
     foreach ($svc in $Services) {
@@ -148,4 +148,4 @@ finally {
     }
 }
 
-Write-Host "`nDeploy completado: https://apife.fixiocode.com / https://apibe.fixiocode.com" -ForegroundColor Green
+Write-Host "`nDeploy completado: https://apife.rinocode.com / https://apibe.rinocode.com" -ForegroundColor Green

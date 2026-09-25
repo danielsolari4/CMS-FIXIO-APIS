@@ -2,8 +2,8 @@ services:
   frontendapi:
     build:
       context: .
-      dockerfile: Ray.FrontendApi/Dockerfile
-    image: fixiocode/api-fe-frontendapi:latest
+      dockerfile: Rino.FrontendApi/Dockerfile
+    image: rinocode/api-fe-frontendapi:latest
     pull_policy: never
     container_name: frontendapi
     restart: unless-stopped
@@ -16,14 +16,14 @@ services:
       ASPNETCORE_URLS: http://+:80
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
       appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
-      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 
   backendapi:
     build:
       context: .
-      dockerfile: Ray.BackendApi/Dockerfile
-    image: fixiocode/api-fe-backendapi:latest
+      dockerfile: Rino.BackendApi/Dockerfile
+    image: rinocode/api-fe-backendapi:latest
     pull_policy: never
     container_name: backendapi
     restart: unless-stopped
@@ -38,14 +38,14 @@ services:
       ASPNETCORE_URLS: http://+:80
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
-      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 
   solr:
     build:
       context: ./solr
       dockerfile: Dockerfile
-    image: fixiocode/api-fe-solr:latest
+    image: rinocode/api-fe-solr:latest
     pull_policy: never
     container_name: solr
     restart: unless-stopped

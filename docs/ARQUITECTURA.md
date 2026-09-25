@@ -3,7 +3,7 @@
 ## Infraestructura
 
 - **Droplet DigitalOcean**: `159.223.183.214` — Ubuntu 24.04.4, 2 vCPU, 2 GB RAM (+2 GB swap).
-- Contenido del monorepo **APIFE** (.NET 10): `Ray.FrontendApi` (API pública de contenido) y `Ray.BackendApi` (API administrativa/backend).
+- Contenido del monorepo **APIFE** (.NET 10): `Rino.FrontendApi` (API pública de contenido) y `Rino.BackendApi` (API administrativa/backend).
 - Acceso: `ssh root@159.223.183.214`. Desde Windows se usa PowerShell con `ssh`/`scp`.
 
 ## Dominios y entrada
@@ -12,10 +12,10 @@ nginx expone los dos dominios (Let's Encrypt vía Certbot en `/etc/letsencrypt/l
 
 | Dominio | upstream (127.0.0.1) | Qué es |
 |---|---|---|
-| `apife.fixiocode.com` | `:8080` | `frontendapi` (Ray.FrontendApi) |
-| `apibe.fixiocode.com` | `:8081` | `backendapi` (Ray.BackendApi) |
+| `apife.rinocode.com` | `:8080` | `frontendapi` (Rino.FrontendApi) |
+| `apibe.rinocode.com` | `:8081` | `backendapi` (Rino.BackendApi) |
 
-Config: `/etc/nginx/sites-enabled/{apife,apibe}.fixiocode.com` con `proxy_pass`, `client_max_body_size 100M`, `proxy_read_timeout 300s`.
+Config: `/etc/nginx/sites-enabled/{apife,apibe}.rinocode.com` con `proxy_pass`, `client_max_body_size 100M`, `proxy_read_timeout 300s`.
 
 ## Contenedores (Docker Compose)
 
@@ -28,9 +28,9 @@ Proyecto en el droplet: **`/root/api-fe`** (`docker-compose.yml` + `.env` + carp
 
 | Contenedor | Imagen | Puertos | Rol |
 |---|---|---|---|
-| `frontendapi` | `fixiocode/api-fe-frontendapi:latest` (build local, se transfiere) | `127.0.0.1:8080→80` | API de contenido (pública) |
-| `backendapi` | `fixiocode/api-fe-backendapi:latest` (build local, se transfiere) | `127.0.0.1:8081→80` | API administrativa (JWT) |
-| `solr` | `fixiocode/api-fe-solr:latest` (build en el droplet, config desde repo) | `127.0.0.1:8983→8983` | Motor de búsqueda |
+| `frontendapi` | `rinocode/api-fe-frontendapi:latest` (build local, se transfiere) | `127.0.0.1:8080→80` | API de contenido (pública) |
+| `backendapi` | `rinocode/api-fe-backendapi:latest` (build local, se transfiere) | `127.0.0.1:8081→80` | API administrativa (JWT) |
+| `solr` | `rinocode/api-fe-solr:latest` (build en el droplet, config desde repo) | `127.0.0.1:8983→8983` | Motor de búsqueda |
 | `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | interno `1433` | Base de datos principal |
 | `mongo` | `mongo:7` | interno `27017` | Base secundaria (conteos de vistas, sesiones, etc.) |
 
@@ -50,7 +50,7 @@ Todos comparten la red externa **`cms-network`** (se creó una vez: `docker netw
 ```yaml
 ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
 appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
-appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.fixiocode.com/}
+appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
 appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}        # frontend + backend
 appSettings__syncLayout__url: ${SYNC_LAYOUT_URL:-http://frontendapi/api/LayoutInstance/InternalSyncSolrByNode}
@@ -60,10 +60,10 @@ Nota: `appSettings__solr__url` apunta a `http://solr:8983/solr/` (DNS interno), 
 
 ## Base de datos
 
-- **SQL Server** (`sqlserver:1433`): base `CMS_STG_TT_NET_CORE`, restaurada desde un bacpac de producción (`fixioCMS`). Usuario app: `sa` (password en `/root/.secrets/sqlserver.env` y en el `.env`).
+- **SQL Server** (`sqlserver:1433`): base `CMS_STG_TT_NET_CORE`, restaurada desde un bacpac de producción (`rinoCMS`). Usuario app: `sa` (password en `/root/.secrets/sqlserver.env` y en el `.env`).
 - **MongoDB** (`mongo:27017`): bases de la plataforma (por ejemplo `assetviewscounts` para "lo más leído"). ⚠ El conteo de vistas no fue restaurado todavía → `GetMostRead` responde 204 (esperado, no es bug).
 - No hay `__EFMigrationsHistory`: no se debe ejecutar migraciones en runtime.
-- `Ray.Model/NewContext/ModelContext.cs`: `OnConfiguring` lee la env var.
+- `Rino.Model/NewContext/ModelContext.cs`: `OnConfiguring` lee la env var.
 
 ## SDK .NET
 
@@ -72,8 +72,8 @@ Nota: `appSettings__solr__url` apunta a `http://solr:8983/solr/` (DNS interno), 
   `mcr.microsoft.com/dotnet/sdk:10.0` dentro del contenedor), igual que antes
   en el droplet. La imagen resultante se exporta (`docker save`) y se transfiere
   al droplet, que solo hace `docker load` + `docker compose up -d`.
-- Dockerfiles: `Ray.FrontendApi/Dockerfile`, `Ray.BackendApi/Dockerfile` y
-  `Ray.CMS/Dockerfile` (multi-stage, publican en .NET 10).
+- Dockerfiles: `Rino.FrontendApi/Dockerfile`, `Rino.BackendApi/Dockerfile` y
+  `Rino.CMS/Dockerfile` (multi-stage, publican en .NET 10).
 - `deploy/deploy.ps1` hace el flujo completo; `deploy/deploy-solr.ps1` solo la
   config de Solr.
 
