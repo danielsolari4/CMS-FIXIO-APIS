@@ -127,7 +127,7 @@ namespace Rino.Model.NewContext
             ChangeTracker.SetAuditProperties(_currentUserService);
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
-        
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -136,7 +136,11 @@ namespace Rino.Model.NewContext
                 var cs = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
                 if (string.IsNullOrWhiteSpace(cs))
                 {
-                    cs = "Server=.;Database=rinoCMS;Trusted_Connection=True;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True;";
+                    throw new InvalidOperationException(
+                        "ModelContext fue creado sin DbContextOptions, por lo que se cae en OnConfiguring. " +
+                        "Registre ICurrentUserService en el contenedor de DI para que se use el constructor " +
+                        "ModelContext(DbContextOptions<ModelContext>, ICurrentUserService), o defina la variable " +
+                        "de entorno ConnectionStrings__DefaultConnection.");
                 }
                 optionsBuilder.UseSqlServer(NormalizeSqlServerConnectionString(cs));
             }

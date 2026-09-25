@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Rino.Managers;
 using Microsoft.AspNetCore.Authorization;
+using Rino.Common.Authentication;
 using Rino.FrontendApi.Attributes;
 using Newtonsoft.Json.Serialization;
 //using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
@@ -49,6 +50,8 @@ namespace Rino.FrontendApi
 
             services.AddMemoryCache();
             services.AddResponseCaching();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, UserService>();
             services.AddIdentity<User, Role>(op =>
             {
                 //op.SignIn.RequireConfirmedEmail = true;
