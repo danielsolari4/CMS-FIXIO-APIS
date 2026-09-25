@@ -32,6 +32,9 @@ namespace Ray.Dtos.Components
         [JsonProperty(PropertyName = "css")]
         public string Css { get; set; }
 
+        [JsonProperty(PropertyName = "layoutSize")]
+        public string LayoutSize { get; set; }
+
         [JsonProperty(PropertyName = "type")]
         public int Type { get; set; }
 

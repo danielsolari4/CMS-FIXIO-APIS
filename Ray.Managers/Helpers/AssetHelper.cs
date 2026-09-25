@@ -19,9 +19,10 @@ namespace Ray.Managers.Helpers
             if (model?.Areas == null) return ids;
             foreach (var area in model?.Areas)
             {
+                if (area.Regions == null) continue;
                 foreach (var region in area.Regions)
                 {
-                    foreach (var component in region.Components)
+                    foreach (var component in LayoutStructureHelper.GetComponents(region))
                     {
                         if (!(component is IComponentNew)) continue;
                         var it = component as IComponentNew;
@@ -43,8 +44,20 @@ namespace Ray.Managers.Helpers
         {
             var ids = new List<int>();
             if (model?.Areas == null) return ids;
-            ids.AddRange(from component in (from area in model?.Areas from region in area.Regions from component in region.Components select component).OfType<IComponentVideo>() select component as IComponentVideo into it where it.Id != 0 select it.Id);
-
+            foreach (var area in model?.Areas)
+            {
+                if (area.Regions == null) continue;
+                foreach (var region in area.Regions)
+                {
+                    foreach (var it in LayoutStructureHelper.GetComponents(region).OfType<IComponentVideo>())
+                    {
+                        if (it.Id != 0)
+                        {
+                            ids.Add(it.Id);
+                        }
+                    }
+                }
+            }
             return ids;
         }
 
@@ -54,9 +67,10 @@ namespace Ray.Managers.Helpers
             if (model?.Areas == null) return ids;
             foreach (var area in model?.Areas)
             {
+                if (area.Regions == null) continue;
                 foreach (var region in area.Regions)
                 {
-                    foreach (var component in region.Components)
+                    foreach (var component in LayoutStructureHelper.GetComponents(region))
                     {
                         if (typeof(T) == typeof(IComponentNew))
                         {

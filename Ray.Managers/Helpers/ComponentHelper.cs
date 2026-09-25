@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Ray.Dtos;
+using Ray.Dtos.Components;
 using Ray.Dtos.Configuration;
 using Ray.Dtos.Interfaces;
 
@@ -50,34 +51,47 @@ namespace Ray.Managers.Helpers
             {
                 Parallel.ForEach(structure.Areas, areaDto =>
                 {
+                    if (areaDto.Regions == null) return;
                     Parallel.ForEach(areaDto.Regions, regionDto =>
                     {
-                        foreach (var componentNew in regionDto.Components.OfType<IComponentNew>())
-                        {
-                            componentNew.Parse(assets?.FirstOrDefault(x => x.Id == componentNew.Id), imageUrl);
-                        }
-
-                        foreach (var componentNew in regionDto.Components.OfType<IComponentVideo>())
-                        {
-                            componentNew.Parse(medias?.FirstOrDefault(x => x.Id == componentNew.Id), imageUrl);
-                        }
-
-                        foreach (var componentNew in regionDto.Components.OfType<IComponentWidget>())
-                        {
-                            componentNew.Parse(widgets?.FirstOrDefault(x => x.Id == componentNew.Id));
-                        }
-                        foreach (var componentNew in regionDto.Components.OfType<IComponentSection>())
-                        {
-                            componentNew.Parse(sections?.FirstOrDefault(x => x.NodeId == componentNew.NodeId), imageUrl);
-                        }
+                        ParseRegionComponents(regionDto, assets, medias, widgets, sections, imageUrl);
                     });
                 });
             }
-
-
-
-
         }
+
+        private static void ParseRegionComponents(RegionDto regionDto, List<AssetSolrDto> assets, List<MediaDto> medias, List<WidgetDto> widgets, List<SectionDto> sections, string imageUrl)
+        {
+            var components = regionDto.Components ?? new ComponentBaseDto[0];
+
+            foreach (var componentNew in components.OfType<IComponentNew>())
+            {
+                componentNew.Parse(assets?.FirstOrDefault(x => x.Id == componentNew.Id), imageUrl);
+            }
+
+            foreach (var componentNew in components.OfType<IComponentVideo>())
+            {
+                componentNew.Parse(medias?.FirstOrDefault(x => x.Id == componentNew.Id), imageUrl);
+            }
+
+            foreach (var componentNew in components.OfType<IComponentWidget>())
+            {
+                componentNew.Parse(widgets?.FirstOrDefault(x => x.Id == componentNew.Id));
+            }
+            foreach (var componentNew in components.OfType<IComponentSection>())
+            {
+                componentNew.Parse(sections?.FirstOrDefault(x => x.NodeId == componentNew.NodeId), imageUrl);
+            }
+
+            if (regionDto.Regions != null)
+            {
+                foreach (var subRegion in regionDto.Regions)
+                {
+                    ParseRegionComponents(subRegion, assets, medias, widgets, sections, imageUrl);
+                }
+            }
+        }
+
 
     }
 }

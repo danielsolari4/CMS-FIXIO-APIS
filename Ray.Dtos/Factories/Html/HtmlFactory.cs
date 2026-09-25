@@ -27,21 +27,40 @@ namespace Ray.Dtos.Factories.Html
                 var regions = string.Empty;
                 foreach (var region in area.Regions)
                 {
-                    var regionsHtml = new HtmlFactory<RegionDto>(JsonStructure, region, _imageUrl).GetHtml();
-
-                    var components = string.Empty;
-                    foreach (var component in region.Components)
-                    {
-                        components += new HtmlFactory<ComponentBaseDto>(JsonStructure, component, _imageUrl).GetHtml();
-                    }
-                    regionsHtml = regionsHtml.ReplaceByHtmlName("components", components);
-                    regions += regionsHtml;
+                    regions += GetRegionHtml(region);
                 }
                 areasHtml = areasHtml.ReplaceByHtmlName("regions", regions);
                 areas += areasHtml;
             }
             var layoutHtml = new HtmlFactory<LayoutStructureDto>(JsonStructure, Layout, _imageUrl).GetHtml();
             return layoutHtml.ReplaceByHtmlName("areas", areas);
+        }
+
+        private string GetRegionHtml(RegionDto region)
+        {
+            var regionsHtml = new HtmlFactory<RegionDto>(JsonStructure, region, _imageUrl).GetHtml();
+
+            var components = string.Empty;
+            if (region.Components != null)
+            {
+                foreach (var component in region.Components)
+                {
+                    components += new HtmlFactory<ComponentBaseDto>(JsonStructure, component, _imageUrl).GetHtml();
+                }
+            }
+            regionsHtml = regionsHtml.ReplaceByHtmlName("components", components);
+
+            var subRegions = string.Empty;
+            if (region.Regions != null)
+            {
+                foreach (var subRegion in region.Regions)
+                {
+                    subRegions += GetRegionHtml(subRegion);
+                }
+            }
+            regionsHtml = regionsHtml.ReplaceByHtmlName("regions", subRegions);
+
+            return regionsHtml;
         }
     }
 

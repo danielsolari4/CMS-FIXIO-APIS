@@ -34,6 +34,10 @@ namespace Ray.Dtos
 
         [JsonProperty(PropertyName = "components")]
         public ComponentBaseDto[] Components { get; set; }
+
+        [JsonProperty(PropertyName = "regions")]
+        public RegionDto[] Regions { get; set; }
+
         [JsonProperty(PropertyName = "cssTitle")]
         public string CssTitle { get; set; }
 

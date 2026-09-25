@@ -19,9 +19,10 @@ namespace Ray.Managers.Helpers
             if (model?.Areas == null) return ids;
             foreach (var area in model?.Areas)
             {
+                if (area.Regions == null) continue;
                 foreach (var region in area.Regions)
                 {
-                    foreach (var component in region.Components)
+                    foreach (var component in LayoutStructureHelper.GetComponents(region))
                     {
                         if (!(component is IComponentWidget)) continue;
                         var it = component as IComponentWidget;

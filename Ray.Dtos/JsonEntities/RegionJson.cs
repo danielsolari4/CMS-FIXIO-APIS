@@ -22,6 +22,9 @@ namespace Ray.Dtos.JsonEntities
         [JsonProperty(PropertyName = "components")]
         public ComponentJson[] Components { get; set; }
 
+        [JsonProperty(PropertyName = "regions")]
+        public RegionJson[] Regions { get; set; }
+
 
         [JsonProperty(PropertyName = "backgroundColor")]
         public string BackgroundColor { get; set; }

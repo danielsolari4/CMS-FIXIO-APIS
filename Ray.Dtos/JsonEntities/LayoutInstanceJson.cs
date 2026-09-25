@@ -72,6 +72,9 @@ namespace Ray.Dtos.JsonEntities
         [JsonProperty(PropertyName = "components")]
         public ComponentInstanceBaseJson[] Components { get; set; }
 
+        [JsonProperty(PropertyName = "regions")]
+        public RegionInstanceJson[] Regions { get; set; }
+
         [JsonProperty(PropertyName = "backgroundColor")]
         public string BackgroundColor { get; set; }
 
@@ -99,6 +102,8 @@ namespace Ray.Dtos.JsonEntities
         [JsonProperty(PropertyName = "css")]
         public string Css { get; set; }
 
+        [JsonProperty(PropertyName = "layoutSize")]
+        public string LayoutSize { get; set; }
 
         [JsonProperty(PropertyName = "backgroundColor")]
         public string BackgroundColor { get; set; }
