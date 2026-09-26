@@ -16,7 +16,7 @@ services:
       ASPNETCORE_URLS: http://+:80
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
       appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
-      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-https://apife.rinocms.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 
   backendapi:
@@ -38,7 +38,7 @@ services:
       ASPNETCORE_URLS: http://+:80
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
-      appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
+      appSettings__jwt__issuer: ${JWT_ISSUER:-https://apife.rinocms.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 
   solr:

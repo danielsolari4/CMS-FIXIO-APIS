@@ -12,10 +12,10 @@ nginx expone los dos dominios (Let's Encrypt vía Certbot en `/etc/letsencrypt/l
 
 | Dominio | upstream (127.0.0.1) | Qué es |
 |---|---|---|
-| `apife.rinocode.com` | `:8080` | `frontendapi` (Rino.FrontendApi) |
-| `apibe.rinocode.com` | `:8081` | `backendapi` (Rino.BackendApi) |
+| `apife.rinocms.com` | `:8080` | `frontendapi` (Rino.FrontendApi) |
+| `apibe.rinocms.com` | `:8081` | `backendapi` (Rino.BackendApi) |
 
-Config: `/etc/nginx/sites-enabled/{apife,apibe}.rinocode.com` con `proxy_pass`, `client_max_body_size 100M`, `proxy_read_timeout 300s`.
+Config: `/etc/nginx/sites-enabled/{apife,apibe}.rinocms.com` con `proxy_pass`, `client_max_body_size 100M`, `proxy_read_timeout 300s`.
 
 ## Contenedores (Docker Compose)
 
@@ -50,7 +50,7 @@ Todos comparten la red externa **`cms-network`** (se creó una vez: `docker netw
 ```yaml
 ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
 appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
-appSettings__jwt__issuer: ${JWT_ISSUER:-http://apife.rinocode.com/}
+appSettings__jwt__issuer: ${JWT_ISSUER:-https://apife.rinocms.com/}
 appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
 appSettings__solr__url: ${SOLR_URL:-http://solr:8983/solr/}        # frontend + backend
 appSettings__syncLayout__url: ${SYNC_LAYOUT_URL:-http://frontendapi/api/LayoutInstance/InternalSyncSolrByNode}

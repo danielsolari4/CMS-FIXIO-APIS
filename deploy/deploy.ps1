@@ -148,4 +148,4 @@ finally {
     }
 }
 
-Write-Host "`nDeploy completado: https://apife.rinocode.com / https://apibe.rinocode.com" -ForegroundColor Green
+Write-Host "`nDeploy completado: https://apife.rinocms.com / https://apibe.rinocms.com" -ForegroundColor Green
