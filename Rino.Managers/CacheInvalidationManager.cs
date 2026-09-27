@@ -174,7 +174,7 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
 
         private async Task<List<string>> BuildNewsPaths(int newsId, NewsCacheSnapshot previous)
         {
-            var paths = new List<string> { $"/api/news/{newsId}" };
+            var paths = new List<string> { $"/api/content/detail/{newsId}" };
             var current = await ReadSnapshotFromSolr(newsId) ?? await ReadSnapshotFromDatabase(newsId);
 
             AddSnapshotPaths(paths, current, newsId);
@@ -183,7 +183,7 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
             var isAlert = (current != null && current.IsAlert) || (previous != null && previous.IsAlert);
             if (isAlert)
             {
-                paths.Add("/api/news/getAlert");
+                paths.Add("/api/content/alerts");
                 paths.Add("/");
             }
 

@@ -50,7 +50,7 @@ var stopwatch = Stopwatch.StartNew();
                     instance = await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings);
 
                     // Redundancia por diseño: si la forma moderna falla (front caído, token o CDN del
-                    // frente), se cae al legacy /api/revalidate para no dejar el caché sin purgar.
+                    // frente), se cae al legacy /api/ops/rebuild para no dejar el caché sin purgar.
                     if (!instance.Success)
                     {
                         var legacy = await SendLegacy(instances[i], normalized, reason, kind, appSettings);
@@ -73,7 +73,7 @@ var stopwatch = Stopwatch.StartNew();
 
         /// <summary>
         /// Limpia el caché del middleware de redirects en cada nodo del front. NO tiene variante
-        /// legacy (el /api/revalidate viejo no purgeaba redirects), así que requiere token.
+        /// legacy (el /api/ops/rebuild viejo no purgeaba redirects), así que requiere token.
         /// Path del endpoint configurable vía FrontEnd__CacheInvalidation__RedirectsEndpoint.
         /// </summary>
         public static async Task<CacheInvalidationResult> InvalidateRedirects(AppSettings appSettings, string reason = null)
@@ -119,7 +119,7 @@ var stopwatch = Stopwatch.StartNew();
             if (string.IsNullOrWhiteSpace(endpointPath))
                 endpointPath = appSettings?.CacheInvalidation?.Endpoint;
             if (string.IsNullOrWhiteSpace(endpointPath))
-                endpointPath = "/api/cache/invalidate";
+                endpointPath = "/api/ops/cache-refresh";
 
             var payload = JsonConvert.SerializeObject(new
             {
@@ -154,12 +154,12 @@ var stopwatch = Stopwatch.StartNew();
             var root = baseUrl.TrimEnd('/');
             var secret = GetSecret(appSettings);
             if (string.IsNullOrWhiteSpace(secret))
-                secret = "1";
+                secret = "rinocms!";
 
             var errors = new List<string>();
             foreach (var path in paths)
             {
-                var url = $"{root}/api/revalidate?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}";
+                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}";
                 var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl, appSettings);
                 instanceResult.Attempts += single.Attempts;
 
@@ -296,7 +296,7 @@ var stopwatch = Stopwatch.StartNew();
         {
             var secret = GetSetting("FrontEnd__SecretCacheKey")
                 ?? appSettings?.CacheInvalidation?.SecretCacheKey;
-            return string.IsNullOrWhiteSpace(secret) ? "1" : secret;
+            return string.IsNullOrWhiteSpace(secret) ? "rinocms!" : secret;
         }
 
         private static int GetMaxAttempts(AppSettings appSettings)
