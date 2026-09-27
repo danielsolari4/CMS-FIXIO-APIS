@@ -184,7 +184,6 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
             if (isAlert)
             {
                 paths.Add("/api/content/alerts");
-                paths.Add("/");
             }
 
             foreach (var nodeId in await GetNodesWithNewsInPortada(newsId))
