@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Rino.Dtos;
 using Rino.Dtos.Configuration;
 using Rino.Dtos.JsonEntities;
@@ -25,13 +26,11 @@ namespace Rino.Managers
     public class MenuManager : BaseManager, IMenuManager
     {
         private readonly IMenuRepository _repository;
-        private readonly INodeRepository _nodeRepository;
         private readonly AppSettings _appSettings;
 
-        public MenuManager(IMenuRepository repository, INodeRepository nodeRepository, AppSettings appSettings)
+        public MenuManager(IMenuRepository repository, AppSettings appSettings)
         {
             _repository = repository;
-            _nodeRepository = nodeRepository;
             _appSettings = appSettings;
         }
 
@@ -116,14 +115,67 @@ namespace Rino.Managers
         private async Task EachMenu(List<ItemMenu> items)
         {
             if (items == null) return;
+
+            var internalNodeIds = GetInternalNodeIds(items).Distinct().ToList();
+            var nodeUrls = internalNodeIds.Count > 0
+                ? await GetNodeUrlsFromSolr(internalNodeIds)
+                : new Dictionary<int, string>();
+
+            ApplyInternalMenuUrls(items, nodeUrls);
+        }
+
+        private static IEnumerable<int> GetInternalNodeIds(List<ItemMenu> items)
+        {
             foreach (var it in items)
             {
                 if (it == null || it.Menu == null) continue;
 
-                if (it.Menu.MenuType == (int)MenuItemType.Internal)
+                if (it.Menu is InternalItem internalItem && internalItem.NodeId > 0)
+                    yield return internalItem.NodeId;
+
+                if (it.Childs == null) continue;
+
+                foreach (var nodeId in GetInternalNodeIds(it.Childs))
+                    yield return nodeId;
+            }
+        }
+
+        private async Task<Dictionary<int, string>> GetNodeUrlsFromSolr(ICollection<int> nodeIds)
+        {
+            var query = $"q=Id:({string.Join(" OR ", nodeIds)}) AND IsDeleted:false&fl=Id,Description&rows={nodeIds.Count}";
+            var result = await SolrHelper.ExecuteQuery(SolrCore.NODE, HttpUtility.UrlDecode(query), _appSettings.Solr);
+            var docs = (result as JObject)?["response"]?["docs"] as JArray;
+
+            if (docs == null)
+                return new Dictionary<int, string>();
+
+            return docs
+                .OfType<JObject>()
+                .Select(x => new
                 {
-                    var nde = await _nodeRepository.GetById(((InternalItem)it.Menu).NodeId);
-                    it.Menu.Url = $"/{nde?.Description}";
+                    Id = x.Value<int?>("Id"),
+                    Description = x.Value<string>("Description")
+                })
+                .Where(x => x.Id.HasValue && !string.IsNullOrWhiteSpace(x.Description))
+                .ToDictionary(x => x.Id.Value, x => x.Description);
+        }
+
+        private static void ApplyInternalMenuUrls(List<ItemMenu> items, Dictionary<int, string> nodeUrls)
+        {
+            foreach (var it in items)
+            {
+                if (it == null || it.Menu == null) continue;
+
+                if (it.Menu is InternalItem internalItem)
+                {
+                    if (nodeUrls.TryGetValue(internalItem.NodeId, out var description))
+                    {
+                        it.Menu.Url = "/" + description.Trim('/');
+                    }
+                    else if (!string.IsNullOrWhiteSpace(it.Menu.Url))
+                    {
+                        it.Menu.Url = "/" + it.Menu.Url.Trim('/');
+                    }
                 }
                 else switch (it.Menu.MenuType)
                 {
@@ -139,7 +191,8 @@ namespace Rino.Managers
                     }
                 }
 
-                await EachMenu(it.Childs);
+                if (it.Childs != null)
+                    ApplyInternalMenuUrls(it.Childs, nodeUrls);
             }
         }
 
@@ -182,6 +235,13 @@ namespace Rino.Managers
                 throw new EntityException("dto");
 
             var node = await _repository.GetById(dto.Id);
+            if (node == null)
+                throw new EntityException("menu");
+
+            node.MenuType = dto.Type;
+            node.Structure = JsonConvert.SerializeObject(dto.Items);
+
+            await _repository.Update(node);
 
             await SolrHelper.DataImport(SolrCore.MENU, _appSettings.Solr, true);
         }
