@@ -83,7 +83,11 @@ namespace Rino.FrontendApi
             services.AddControllers(options =>
             {
                 options.Filters.Add(new ProducesAttribute("application/json"));
-                
+                options.CacheProfiles.Add("WeatherCacheProfile", new CacheProfile
+                {
+                    Duration = 300,
+                    Location = ResponseCacheLocation.Any,
+                });
             })
              .AddNewtonsoftJson(options =>
              {
