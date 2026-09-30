@@ -278,6 +278,7 @@ namespace Rino.Dtos.Configuration
         public string GetMostReadExclude { get; set; }
         public string DatabaseName { get; set; }
         public string NameCollectionAssetsViewCount { get; set; }
+        public string NameCollectionNewsViewStats { get; set; }
     }
 
     public class AddThis

@@ -24,13 +24,15 @@ namespace Rino.BackendApi.Controllers
         private readonly IUserManager _userManager;
         private readonly AppSettings _appSettings;
         private readonly IBackloadManager _backloadManager;
+        private readonly IStatsManager _statsManager;
 
-        public NewsController(INewsManager manager, IUserManager userManager, AppSettings appSettings, IBackloadManager backloadManager)
+        public NewsController(INewsManager manager, IUserManager userManager, AppSettings appSettings, IBackloadManager backloadManager, IStatsManager statsManager)
         {
             _manager = manager;
             _userManager = userManager;
             _appSettings = appSettings;
             _backloadManager = backloadManager;
+            _statsManager = statsManager;
         }
 
         [HttpGet]
@@ -83,6 +85,22 @@ namespace Rino.BackendApi.Controllers
             return await TryJsonResultAsync(async () =>
                 {
                     return Ok(await SolrHelper.ExecuteQuery(SolrCore.NEWS, HttpUtility.UrlDecode(HttpContext.Request.QueryString.ToString()),_appSettings.Solr));
+                });
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("ViewStatsDashboard")]
+        public async Task<IActionResult> ViewStatsDashboard(int rows = 8)
+        {
+            return await TryJsonResultAsync(async () =>
+                {
+                    if (User?.Identity?.IsAuthenticated != true)
+                        return Unauthorized();
+
+                    var loggedUser = GetLoggedUser();
+                    var dashboard = await _statsManager.GetNewsViewStatsDashboard(loggedUser?.Email, rows);
+                    return Ok(CMSResponse(dashboard));
                 });
         }
 

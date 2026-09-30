@@ -111,9 +111,9 @@ namespace Rino.FrontendApi.Controllers
 
         [HttpPost]
         [Route("ViewsCount")]
-        public async Task<IActionResult> ViewsCount(int id, int nodeId, DateTime publicationDate, string slug)
+        public async Task<IActionResult> ViewsCount(int id, int nodeId, DateTime publicationDate, string slug, int? authorId = null)
         {
-            await _statsManager.ViewCount(id, nodeId, publicationDate, slug);
+            await _statsManager.ViewCount(id, nodeId, publicationDate, slug, authorId);
             return Ok();
         }
 
