@@ -7,12 +7,16 @@
   Cuando cambia la config de solr (carpeta solr/ del repo: Dockerfile,
   mssql-jdbc, solr_home), este script:
     1. Empaqueta ./solr (excluye las carpetas data/ de los cores)
-    2. scp y extrae en /root/api-fe/solr (droplet)
-    3. docker compose build solr + up -d --force-recreate --no-deps solr
+    2. scp y extrae en /root/api-fe/solr (droplet), y sube docker-compose.yml
+    3. Hace backup best-effort de los indices actuales
+    4. Migra los indices actuales al volumen api-fe-solr-data
+    5. docker compose build solr + up -d --force-recreate --no-deps solr
+    6. Valida que /var/solr este montado
 
-  El build de solr es liviano (FROM solr:8.11.4 + copy) y NO satura la RAM
-  del droplet (a diferencia de los builds .NET). La data de los cores vive
-  en el volumen /var/solr, por lo que recrear el contenedor NO pierde datos.
+  El build de solr es liviano (FROM solr:8.4.0 + copy) y NO satura la RAM
+  del droplet (a diferencia de los builds .NET). La data de los cores debe
+  vivir en /var/solr/data/<core>, respaldada por el volumen api-fe-solr-data.
+  Por eso docker-compose.yml debe montar api-fe-solr-data en /var/solr.
 
   Requisito: la carpeta solr/ debe existir en el repo local (commitear la
   config). Si no esta, descargala una vez desde el droplet:
@@ -36,6 +40,7 @@ $SolrLocal  = Join-Path $RepoRoot 'solr'
 $DropletDir = '/root/api-fe'
 $TgzPath    = Join-Path $env:TEMP 'solr-config.tar.gz'
 $Remote     = "$User@$Ip"
+$SolrDataVolume = 'api-fe-solr-data'
 
 if (-not (Test-Path $SolrLocal)) {
     throw "No existe $SolrLocal en el repo. La config de solr se sube desde el repo. Descargala una vez desde el droplet:
@@ -60,6 +65,7 @@ function Invoke-Native {
 Push-Location $RepoRoot
 try {
     Remove-Item $TgzPath -ErrorAction SilentlyContinue
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 
     Invoke-Native 'Empaquetando config de solr' @(
         'tar',
@@ -68,8 +74,17 @@ try {
     )
 
     Invoke-Native 'Subiendo config al droplet' @('scp', $TgzPath, "$Remote`:$DropletDir/")
+    Invoke-Native 'Backup docker-compose remoto' @('ssh', $Remote, "cd $DropletDir && if [ -f docker-compose.yml ]; then cp docker-compose.yml docker-compose.yml.bak-$timestamp; fi")
+    Invoke-Native 'Subiendo docker-compose.yml' @('scp', (Join-Path $RepoRoot 'docker-compose.yml'), "$Remote`:$DropletDir/docker-compose.yml")
 
-    $remoteCmd = "cd $DropletDir && tar -xzf solr-config.tar.gz && docker compose build solr && docker compose up -d --force-recreate --no-deps solr && docker image prune -f"
+    $backupName = "solr-data-before-deploy-$timestamp.tar.gz"
+    $backupCmd = "cd $DropletDir && mkdir -p solr-backups && if docker ps --format '{{.Names}}' | grep -qx solr; then docker exec solr sh -lc 'cd /opt/solr/server/solr && tar -czf /tmp/$backupName */data 2>/dev/null || true' && docker cp solr:/tmp/$backupName solr-backups/$backupName || true; fi"
+    Invoke-Native 'Backup best-effort de indices actuales' @('ssh', $Remote, $backupCmd)
+
+    $migrateCmd = "cd $DropletDir && tar -xzf solr-config.tar.gz && docker volume create $SolrDataVolume >/dev/null && if [ -f solr-backups/$backupName ]; then docker run --rm -v $SolrDataVolume`:/target -v $DropletDir/solr-backups:/backups solr:8.4.0 sh -lc 'rm -rf /target/data && mkdir -p /target/data /tmp/solr-index-backup && tar -xzf /backups/$backupName -C /tmp/solr-index-backup && for d in /tmp/solr-index-backup/*/data; do core=`$(basename `$(dirname ""`$d"")); mkdir -p ""/target/data/`$core""; cp -a ""`$d/."" ""/target/data/`$core/""; done; chown -R 8983:8983 /target/data'; fi"
+    Invoke-Native 'Migrando indices actuales al volumen persistente' @('ssh', $Remote, $migrateCmd)
+
+    $remoteCmd = "cd $DropletDir && docker compose build solr && docker compose up -d --force-recreate --no-deps solr && docker inspect solr --format '{{json .Mounts}}' | grep -q '""Destination"":""/var/solr""' && docker image prune -f"
     Invoke-Native 'Build + up solr en el droplet' @('ssh', $Remote, $remoteCmd)
 
     Invoke-Native 'Estado del contenedor' @('ssh', $Remote, 'docker ps --filter name=solr')

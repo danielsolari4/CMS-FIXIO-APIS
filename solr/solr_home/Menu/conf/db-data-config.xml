@@ -9,12 +9,7 @@
 	<document>
 		<entity name="Menu" 
 				query="SELECT * FROM [Menu]" 
-				deltaQuery="SELECT [Id] into #tmpMenu_ids FROM Menu WHERE CacheSolr = 0 
-					select Id from #tmpMenu_ids
-						UPDATE Menu
-						Set CacheSolr = 1
-					where id in (select id from #tmpMenu_ids)
-					drop table #tmpMenu_ids" 
+				deltaQuery="SELECT [Id] FROM [Menu] WHERE CreationDate > '${dataimporter.last_index_time}' OR LastModificationDate > '${dataimporter.last_index_time}'" 
 				deltaImportQuery="SET NOCOUNT ON; select * from Menu where Id='${dih.delta.Id}'">
 			<field column="Id" name="Id" />
 			<field column="MenuType" name="MenuType" />

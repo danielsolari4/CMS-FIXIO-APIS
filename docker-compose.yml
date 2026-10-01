@@ -64,7 +64,13 @@ services:
     environment:
       - SOLR_HEAP=512m
       - SOLR_HOME=/opt/solr/server/solr
+    volumes:
+      - solr-data:/var/solr
 
 networks:
   cms-network:
     external: true
+
+volumes:
+  solr-data:
+    name: api-fe-solr-data
