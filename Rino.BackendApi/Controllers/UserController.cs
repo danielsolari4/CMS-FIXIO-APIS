@@ -105,6 +105,7 @@ namespace Rino.BackendApi.Controllers
                     var oldProfileImagePath = user.ProfileImagePath;
                     user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
                     await _manager.SetProfileImagePath(user);
+                    await TryDeleteOldProfileImage(oldProfileImagePath);
                     return Ok(user.ProfileImagePath);
                 });
         }
@@ -140,6 +141,7 @@ namespace Rino.BackendApi.Controllers
                 var oldProfileImagePath = user.ProfileImagePath;
                 user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
                 await _manager.SetProfileImagePath(user);
+                await TryDeleteOldProfileImage(oldProfileImagePath);
                 return Ok(user.ProfileImagePath);
             });
         }
@@ -169,10 +171,22 @@ namespace Rino.BackendApi.Controllers
                 throw new ModelException(ModelState.GetErrorMessage());
             }
 
-            if (!result.Error && !string.IsNullOrWhiteSpace(oldProfileImagePath))
-                await _amazonS3Manager.DeleteOneAsync(oldProfileImagePath);
-
             return profileImagePath;
+        }
+
+        private async Task TryDeleteOldProfileImage(string oldProfileImagePath)
+        {
+            if (string.IsNullOrWhiteSpace(oldProfileImagePath))
+                return;
+
+            try
+            {
+                await _amazonS3Manager.DeleteOneAsync(oldProfileImagePath);
+            }
+            catch
+            {
+                // A stale or legacy profile image path must not block saving the new upload.
+            }
         }
 
         [HttpPut]
