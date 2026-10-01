@@ -178,7 +178,7 @@ namespace Rino.BackendApi.Controllers
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var user = await _userManager.FindByNameAsync((GetLoggedUser().Email.ToString()));
+            var user = await _applicationUserManager.FindByName((GetLoggedUser().Email.ToString()));
             if (user == null) return BadRequest();
 
             IdentityResult result = await _userManager.ChangePasswordAsync(user, model.OldPassword,
@@ -436,6 +436,18 @@ namespace Rino.BackendApi.Controllers
             return _dbContext.Users.FirstOrDefaultAsync(s => s.UserName == userNameOrEmail || s.Email == userNameOrEmail);
         }
 
+        private async Task<List<string>> GetMissingRoles(IEnumerable<string> roleNames)
+        {
+            var missing = new List<string>();
+            foreach (var roleName in roleNames ?? Enumerable.Empty<string>())
+            {
+                if (!await _roleManager.RoleExistsAsync(roleName))
+                    missing.Add(roleName);
+            }
+
+            return missing;
+        }
+
 
         [NonAction]
         public async Task<List<Role>> GetUserRoles(User user)
@@ -565,7 +577,7 @@ namespace Rino.BackendApi.Controllers
                 return BadRequest(ModelState);
 
 
-            var user = await _userManager.FindByNameAsync(model.Email);
+            var user = await _applicationUserManager.FindByName(model.Email);
 
             if (user == null)
             {
@@ -594,7 +606,16 @@ namespace Rino.BackendApi.Controllers
 
                 if (result.Succeeded)
                 {
-                    user = await _userManager.FindByNameAsync(u.UserName);
+                    user = await _applicationUserManager.FindByName(u.UserName);
+
+                    var missingRoles = await GetMissingRoles(model.Roles);
+                    if (missingRoles.Any())
+                    {
+                        await _userManager.DeleteAsync(user);
+                        ModelState.AddModelError("Roles", $"Role(s) not found: {string.Join(", ", missingRoles)}");
+                        return BadRequest(ModelState);
+                    }
+
                     await _userManager.AddToRolesAsync(user, model.Roles.ToArray());
                     var token = await _userManager.GenerateUserTokenAsync(user, "Invitation", "EmailConfirmation");
                     await SolrHelper.DataImport(SolrCore.USER, _appSettings.Solr);
@@ -622,8 +643,16 @@ namespace Rino.BackendApi.Controllers
             }
             else
             {
-                if (user.IsDeleted || user.Discriminator.Equals(UserDiscriminator.Frontend))
+                // Allow re-inviting users that never confirmed their previous invitation.
+                if (user.IsDeleted || user.Discriminator.Equals(UserDiscriminator.Frontend) || !user.EmailConfirmed)
                 {
+                    var missingRoles = await GetMissingRoles(model.Roles);
+                    if (missingRoles.Any())
+                    {
+                        ModelState.AddModelError("Roles", $"Role(s) not found: {string.Join(", ", missingRoles)}");
+                        return BadRequest(ModelState);
+                    }
+
                     user.IsDeleted = false;
                     user.IsEnabled = false;
                     user.CacheSolr = false;
@@ -633,6 +662,16 @@ namespace Rino.BackendApi.Controllers
                     user.Discriminator = UserDiscriminator.Backend;
 
                     await _userManager.UpdateAsync(user);
+
+                    var currentRoles = await _userManager.GetRolesAsync(user);
+                    var rolesToRemove = currentRoles.Except(model.Roles).ToArray();
+                    if (rolesToRemove.Any())
+                        await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+
+                    var rolesToAdd = model.Roles.Except(currentRoles).ToArray();
+                    if (rolesToAdd.Any())
+                        await _userManager.AddToRolesAsync(user, rolesToAdd);
+
                     await SolrHelper.DataImport(SolrCore.USER, _appSettings.Solr);
                     var token = await _userManager.GenerateUserTokenAsync(user, "Invitation", "EmailConfirmation");
 
@@ -667,7 +706,7 @@ namespace Rino.BackendApi.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "HasPermissionPolicy")]
         public async Task<IActionResult> ResendUserRequest(ResendUserRequestBindingModel model)
         {
-            var currentUser = await _userManager.FindByNameAsync(model.UserName);
+            var currentUser = await _applicationUserManager.FindByName(model.UserName);
 
             if (currentUser != null && !currentUser.EmailConfirmed)
             {
@@ -736,7 +775,7 @@ namespace Rino.BackendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userToConfirm = await _userManager.FindByEmailAsync(model.Email);
+            var userToConfirm = await _applicationUserManager.FindByEmail(model.Email);
 
             if (userToConfirm == null)
             {
@@ -801,7 +840,7 @@ namespace Rino.BackendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _applicationUserManager.FindByEmail(model.Email);
 
             if (user == null)
             {
@@ -831,7 +870,7 @@ namespace Rino.BackendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _applicationUserManager.FindByEmail(model.Email);
 
             if (user == null)
             {
@@ -923,7 +962,7 @@ namespace Rino.BackendApi.Controllers
 
             if (result.Succeeded)
             {
-                var currentUser = await _userManager.FindByNameAsync(user.UserName);
+                var currentUser = await _applicationUserManager.FindByName(user.UserName);
                 await _userManager.AddToRoleAsync(currentUser, "Admin");
             }
             else
@@ -974,7 +1013,7 @@ namespace Rino.BackendApi.Controllers
         [Route("ResendVerificationFE")]
         public async Task<IActionResult> ResendVerificationFE(ResendUserRequestBindingModel model)
         {
-            var currentUser = await _userManager.FindByNameAsync(model.UserName);
+            var currentUser = await _applicationUserManager.FindByName(model.UserName);
 
             if (currentUser != null && !currentUser.EmailConfirmed)
             {

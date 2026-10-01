@@ -25,12 +25,10 @@ namespace Rino.FrontendApi.Attributes
 
     public class HasPermissionsHandler : AuthorizationHandler<HasPermissionRequirement>
     {
-        private readonly UserManager<User> _userManager;
         private readonly IApplicationUserManager _applicationUserManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public HasPermissionsHandler(UserManager<User> userManager, IApplicationUserManager applicationUserManager, IHttpContextAccessor httpContextAccessor)
+        public HasPermissionsHandler(IApplicationUserManager applicationUserManager, IHttpContextAccessor httpContextAccessor)
         {
-            _userManager = userManager;
             _applicationUserManager = applicationUserManager;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -44,7 +42,7 @@ namespace Rino.FrontendApi.Attributes
                 if (context.User.Identity.IsAuthenticated)
                 {
                     var loggedUser = GetLoggedUser(context);
-                    var user = _userManager.FindByEmailAsync(loggedUser.Email).Result;
+                    var user = _applicationUserManager.FindByIdAsync(loggedUser.Id.ToString(), default).Result;
                     if (user == null || !user.IsEnabled || !_applicationUserManager.HasAccessToActionAsync(controller, action, loggedUser.RolesInt).Result)
                     {
                         context.Fail();

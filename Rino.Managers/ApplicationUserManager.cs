@@ -26,6 +26,8 @@ namespace Rino.Managers
         IUserTwoFactorStore<User>,
         IQueryableUserStore<User>
     {
+        Task<User> FindByName(string userName);
+        Task<User> FindByEmail(string email);
         Task<bool> HasAccessToActionAsync(string controllerName, string actionName, List<int> userActions);
         Task ValidateRolesAsync(List<string> roles);
         List<int> GetControllerActionUserAllowedList(User user);
@@ -122,6 +124,14 @@ namespace Rino.Managers
                 throw new ArgumentNullException("userName");
 
             return Task.FromResult<User>(_userRepository.Get(u => u.UserName.Equals(normalizedUserName)));
+        }
+
+        public Task<User> FindByName(string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+                return Task.FromResult<User>(null);
+
+            return Task.FromResult<User>(_userRepository.Get(u => u.UserName.Equals(userName)));
         }
 
 
@@ -349,6 +359,16 @@ namespace Rino.Managers
                 throw new ArgumentNullException("email");
 
             var user = _userRepository.Get(u => u.Email.Equals(normalizedEmail) && u.Discriminator.Equals(UserDiscriminator.Backend) && !u.IsDeleted);
+
+            return Task.FromResult<User>(user);
+        }
+
+        public Task<User> FindByEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return Task.FromResult<User>(null);
+
+            var user = _userRepository.Get(u => u.Email.Equals(email) && u.Discriminator.Equals(UserDiscriminator.Backend) && !u.IsDeleted);
 
             return Task.FromResult<User>(user);
         }

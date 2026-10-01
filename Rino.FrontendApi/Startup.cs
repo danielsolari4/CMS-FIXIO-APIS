@@ -147,7 +147,16 @@ namespace Rino.FrontendApi
                         });
                 });
             services.AddRepositories();
-            services.AddScoped<IMailSender, MailSender>();
+            services.AddScoped<IMailSender>(sp =>
+            {
+                var settings = sp.GetRequiredService<AppSettings>();
+                var provider = settings.Mail?.Provider;
+
+                if (string.Equals(provider, "Resend", System.StringComparison.OrdinalIgnoreCase))
+                    return ActivatorUtilities.CreateInstance<ResendMailSender>(sp);
+
+                return ActivatorUtilities.CreateInstance<MailSender>(sp);
+            });
             services.AddScoped<IFrontEndUserManager, FrontEndUserManager>();
         }
 

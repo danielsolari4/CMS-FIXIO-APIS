@@ -149,7 +149,7 @@ namespace Rino.FrontendApi.Controllers
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var user = await _userManager.FindByNameAsync((GetLoggedUser().Email.ToString()));
+            var user = await _applicationUserManager.FindByName((GetLoggedUser().Email.ToString()));
             if (user == null) return BadRequest();
 
             IdentityResult result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
@@ -193,7 +193,7 @@ namespace Rino.FrontendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _applicationUserManager.FindByEmail(model.Email);
 
             if (user == null)
             {
@@ -223,7 +223,7 @@ namespace Rino.FrontendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _applicationUserManager.FindByEmail(model.Email);
 
             if (user == null)
             {
@@ -257,7 +257,7 @@ namespace Rino.FrontendApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userToConfirm = await _userManager.FindByEmailAsync(model.Email);
+            var userToConfirm = await _applicationUserManager.FindByEmail(model.Email);
 
             if (userToConfirm == null)
             {
@@ -322,7 +322,7 @@ namespace Rino.FrontendApi.Controllers
                 UserDto userDto = null;
 
                 if (!string.IsNullOrWhiteSpace(model.Email))
-                    user = await _userManager.FindByEmailAsync(model.Email);
+                    user = await _applicationUserManager.FindByEmail(model.Email);
 
                 if (!string.IsNullOrWhiteSpace(model.FacebookId) || !string.IsNullOrWhiteSpace(model.TwitterId))
                     userDto = (await _userManagerTwo.GetByExternalId(model.FacebookId, model.TwitterId));
@@ -368,7 +368,7 @@ namespace Rino.FrontendApi.Controllers
 
                         if (result.Succeeded)
                         {
-                            user = await _userManager.FindByNameAsync(u.UserName);
+                            user = await _applicationUserManager.FindByName(u.UserName);
                             await _userManager.AddToRoleAsync(user, "User");
                             var token = await _userManager.GenerateUserTokenAsync(user, "Invitation", "EmailConfirmation");
                             await SolrHelper.DataImport(Utils.Solr.SolrCore.USER, _appSettings.Solr);
@@ -408,7 +408,7 @@ namespace Rino.FrontendApi.Controllers
 
                         if (result.Succeeded)
                         {
-                            var currentUser = await _userManager.FindByNameAsync(u.UserName);
+                            var currentUser = await _applicationUserManager.FindByName(u.UserName);
                             await _userManager.AddToRoleAsync(currentUser, "User");
                             await SolrHelper.DataImport(Rino.Utils.Solr.SolrCore.USER, _appSettings.Solr);
                         }
@@ -515,7 +515,7 @@ namespace Rino.FrontendApi.Controllers
 
             if (userDto != null)
             {
-                var user = await _userManager.FindByNameAsync(userDto.UserName);
+                var user = await _applicationUserManager.FindByName(userDto.UserName);
 
                 if (user != null)
                 {

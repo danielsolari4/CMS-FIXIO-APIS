@@ -18,6 +18,10 @@ services:
       appSettings__mongoDb__connectionString: ${MONGO_CONNECTION}
       appSettings__jwt__issuer: ${JWT_ISSUER:-https://apife.rinocms.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
+      appSettings__mail__provider: ${MAIL_PROVIDER:-Smtp}
+      appSettings__resend__apiKey: ${RESEND_API_KEY:-}
+      appSettings__resend__fromAddress: ${RESEND_FROM_ADDRESS:-}
+      appSettings__resend__fromDisplayName: ${RESEND_FROM_DISPLAY_NAME:-Ray.media}
 
   backendapi:
     build:
@@ -40,6 +44,10 @@ services:
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION}
       appSettings__jwt__issuer: ${JWT_ISSUER:-https://apife.rinocms.com/}
       appSettings__jwt__key: ${JWT_KEY:-VisaCardLabJWT-Auth}
+      appSettings__mail__provider: ${MAIL_PROVIDER:-Smtp}
+      appSettings__resend__apiKey: ${RESEND_API_KEY:-}
+      appSettings__resend__fromAddress: ${RESEND_FROM_ADDRESS:-}
+      appSettings__resend__fromDisplayName: ${RESEND_FROM_DISPLAY_NAME:-Ray.media}
 
   solr:
     build:

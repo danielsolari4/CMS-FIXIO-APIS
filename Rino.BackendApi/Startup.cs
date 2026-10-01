@@ -155,7 +155,16 @@ namespace Rino.BackendApi
             services.AddHostedService<CacheInvalidationQueueHostedService>();
 
             services.AddScoped<ICurrentUserService, UserService>();
-            services.AddScoped<IMailSender, MailSender>();
+            services.AddScoped<IMailSender>(sp =>
+            {
+                var settings = sp.GetRequiredService<AppSettings>();
+                var provider = settings.Mail?.Provider;
+
+                if (string.Equals(provider, "Resend", System.StringComparison.OrdinalIgnoreCase))
+                    return ActivatorUtilities.CreateInstance<ResendMailSender>(sp);
+
+                return ActivatorUtilities.CreateInstance<MailSender>(sp);
+            });
         }
 
         private static string NormalizeSqlServerConnectionString(string connectionString)

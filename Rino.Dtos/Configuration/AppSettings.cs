@@ -12,6 +12,8 @@ namespace Rino.Dtos.Configuration
         public Content Content { get; set; }
         public SolrConfig Solr { get; set; }
         public SMTP Smtp { get; set; }
+        public Mail Mail { get; set; }
+        public Resend Resend { get; set; }
         public Sitemap Sitemap { get; set; }
         public Weather Weather { get; set; }
         public Jwt Jwt { get; set; }
@@ -151,6 +153,18 @@ namespace Rino.Dtos.Configuration
         public bool EnableEmailNotifications { get; set; }
         public string EnableEmailAddresses { get; set; }
         public string EmailTemplateLocation { get; set; }
+    }
+
+    public class Mail
+    {
+        public string Provider { get; set; }
+    }
+
+    public class Resend
+    {
+        public string ApiKey { get; set; }
+        public string FromAddress { get; set; }
+        public string FromDisplayName { get; set; }
     }
 
     public class MediaSettings

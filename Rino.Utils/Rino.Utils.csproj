@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Rino.Dtos\Rino.Dtos.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Mail\Templates\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
