@@ -42,8 +42,8 @@
 				<field column="NewsSourceNewsId" name="NewsSourceNewsId" />
 				<field column="ExpirationDate" name="ExpirationDate" />
 				<field column="EditorComments" name="EditorComments" />
-				<entity name="RelatedNewsEntity" query="select RelatedAssetId from AssetAsset where AssetId='${Asset.Id}'">
-					<field column="RelatedAssetId" name="RelatedNews" />
+				<entity name="RelatedNewsEntity" query="select AssetId from AssetAsset where RelatedAssetId='${Asset.Id}'">
+					<field column="AssetId" name="RelatedNews" />
 				</entity>
 				<entity name="AssetNode" query="select NodeId from AssetNode where AssetId='${Asset.Id}'">
 					<field column="NodeId" name="Nodes_Id" />
