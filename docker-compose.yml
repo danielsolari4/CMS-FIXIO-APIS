@@ -74,3 +74,4 @@ networks:
 volumes:
   solr-data:
     name: api-fe-solr-data
+    external: true
