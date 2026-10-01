@@ -276,7 +276,8 @@ namespace Rino.BackendApi
             }
 
             //check interval
-            SyncLayoutInstancesTimer.Interval = new TimeSpan(0, AppSettings.SyncLayout.TimeInMinutes, 60).TotalMilliseconds;
+            SyncLayoutInstancesTimer.Interval = TimeSpan.FromMinutes(AppSettings.SyncLayout.TimeInMinutes).TotalMilliseconds;
+            SyncLayoutInstancesTimer.Start();
         }
     }
 

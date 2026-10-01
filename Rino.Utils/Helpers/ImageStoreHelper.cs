@@ -2,48 +2,59 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.FileProviders;
 using Rino.Dtos;
 using Rino.Dtos.Configuration;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using Rino.Utils.Exception;
-using System.Threading.Tasks;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
-using Microsoft.Extensions.FileProviders;
+using SixLabors.ImageSharp.Processing;
 
 
 namespace Rino.Utils.Helpers
 {
     public static class ImageStoreHelper
     {
+        private const string ProfileImageCloudFolder = "Files/ProfileImage";
+        private const string ProfileImageLocalFolder = "ProfileImage";
+
+        public static string CreateProfileImageCloudPath(string fileName)
+        {
+            var newFileName = string.Format("{0}{1}", Guid.NewGuid(), Path.GetExtension(fileName));
+            return GetProfileImageCloudPath(newFileName);
+        }
+
+        public static void ValidateProfileImage(string fileName, string contentType, long length, MediaSettings mediaSettings)
+        {
+            if (!string.IsNullOrWhiteSpace(contentType) && mediaSettings.Profile.ContentTypeAllowed != null && !mediaSettings.Profile.ContentTypeAllowed.Contains(contentType.Replace("image/", string.Empty)))
+                throw new System.Exception("PIEX_003");//profile picture content type
+
+            if (!string.IsNullOrWhiteSpace(fileName) && mediaSettings.Profile.ContentTypeAllowed != null && !mediaSettings.Profile.ContentTypeAllowed.Contains(fileName.Split('.').ToList().Last()))
+                throw new System.Exception("El tipo de imágen no está permitido");//profile picture content type
+
+            if (mediaSettings.Profile.MaxContentLength < length)
+                throw new System.Exception("PIEX_004-" + ((int)mediaSettings.Profile.MaxContentLength / 1000000) + "MB"); //profile picture content size
+        }
+
         public static async Task<string> UpdateUserProfileImage(string profileImagePath, IFormFile file, MediaSettings mediaSettings)
         {
             if (file == null)
                 throw new System.Exception("PIEX_001");
 
-            var storeFolderName = mediaSettings.Profile.FolderName;
-
-            if (string.IsNullOrWhiteSpace(storeFolderName))
-                throw new ConfigurationException("PIEX_002");//profile picture folder name
-
-            var relativePath = mediaSettings.Profile.FolderPath;
-            var profileDir = Path.Combine(relativePath, storeFolderName);
+            var profileDir = GetProfileImageLocalDirectory(mediaSettings);
 
             if (!Directory.Exists(profileDir))
                 Directory.CreateDirectory(profileDir);
 
-            if (!string.IsNullOrWhiteSpace(file.ContentType) && mediaSettings.Profile.ContentTypeAllowed != null && !mediaSettings.Profile.ContentTypeAllowed.Contains(file.ContentType.Replace("image/", string.Empty)))
-                throw new System.Exception("PIEX_003");//profile picture content type
-
-            if (mediaSettings.Profile.MaxContentLength < file.Length)
-                throw new System.Exception("PIEX_004-" + ((int)mediaSettings.Profile.MaxContentLength / 1000000) + "MB"); //profile picture content size
+            ValidateProfileImage(file.FileName, file.ContentType, file.Length, mediaSettings);
 
             var fileName = string.Format("{0}{1}", Guid.NewGuid(), Path.GetExtension(file.FileName));
-            string filePath = Path.Combine(relativePath, storeFolderName, fileName);
+            string filePath = Path.Combine(profileDir, fileName);
 
             using (Stream fileStream = new FileStream(filePath, FileMode.Create))
             {
@@ -52,10 +63,11 @@ namespace Rino.Utils.Helpers
 
 
             // deletes old profile image path
-            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(Path.Combine(relativePath, profileImagePath)))
-                File.Delete(Path.Combine(relativePath, profileImagePath));
+            var oldFilePath = GetProfileImageLocalPath(profileImagePath, mediaSettings);
+            if (!string.IsNullOrWhiteSpace(oldFilePath) && File.Exists(oldFilePath))
+                File.Delete(oldFilePath);
 
-            return string.Format("{0}/{1}", storeFolderName, fileName);
+            return GetProfileImageCloudPath(fileName);
         }
 
         public static bool IsImage(string filePath)
@@ -116,17 +128,9 @@ namespace Rino.Utils.Helpers
 
             LogImage("Tomo el nombre de la carpeta final", mediaSettings);
 
-            var storeFolderName = mediaSettings.Profile.FolderName;
-
-            LogImage("Chequeo el nombre de la carpeta", mediaSettings);
-
-            if (string.IsNullOrWhiteSpace(storeFolderName))
-                throw new ConfigurationException("Nombre de carpeta de imagenes de perfil");//profile picture folder name
-
             LogImage("Toma el path relativo", mediaSettings);
 
-            var relativePath = mediaSettings.Profile.FolderPath;
-            var profileDir = Path.Combine(relativePath, storeFolderName);
+            var profileDir = GetProfileImageLocalDirectory(mediaSettings);
 
             LogImage("Chequea la existencia del directorio", mediaSettings);
 
@@ -135,13 +139,9 @@ namespace Rino.Utils.Helpers
 
             LogImage("Chequea la extensión del archivo", mediaSettings);
 
-            if (!string.IsNullOrWhiteSpace(fileName.Split('.').ToList().Last()) && mediaSettings.Profile.ContentTypeAllowed != null && !mediaSettings.Profile.ContentTypeAllowed.Contains(fileName.Split('.').ToList().Last()))
-                throw new System.Exception("El tipo de imágen no está permitido");//profile picture content type
-
             LogImage("Chequea el tamaño de la imagen cargada", mediaSettings);
 
-            if (mediaSettings.Profile.MaxContentLength < stream.Length)
-                throw new System.Exception("El tamaño de la imágen no puede superar los " + ((int)mediaSettings.Profile.MaxContentLength / 1000000) + "MB"); //profile picture content size
+            ValidateProfileImage(fileName, null, stream.Length, mediaSettings);
 
             LogImage("Genera el guid de la imagen y toma el path final de la misma", mediaSettings);
 
@@ -152,7 +152,7 @@ namespace Rino.Utils.Helpers
             {
                 LogImage("Copia el archivo de la imagen y lo genera en el directorio final", mediaSettings);
 
-                using (var fileStream = File.Create(Path.Combine(relativePath, storeFolderName, new_fileName)))
+                using (var fileStream = File.Create(Path.Combine(profileDir, new_fileName)))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
                     stream.CopyTo(fileStream);
@@ -168,22 +168,58 @@ namespace Rino.Utils.Helpers
             }
 
             // deletes old profile image path
-            if (!string.IsNullOrWhiteSpace(profileImagePath) && File.Exists(Path.Combine(relativePath, profileImagePath)))
-                File.Delete(Path.Combine(relativePath, profileImagePath));
+            var oldFilePath = GetProfileImageLocalPath(profileImagePath, mediaSettings);
+            if (!string.IsNullOrWhiteSpace(oldFilePath) && File.Exists(oldFilePath))
+                File.Delete(oldFilePath);
 
-            return string.Format("{0}/{1}", storeFolderName, new_fileName);
+            return GetProfileImageCloudPath(new_fileName);
         }
 
         private static void LogImage(string message, MediaSettings mediaSettings)
         {
-            var relativePath = mediaSettings.Profile.FolderPath;
-            var storeFolderName = mediaSettings.Profile.FolderName;
+            var profileDir = Path.Combine(mediaSettings.Profile.FolderPath, ProfileImageLocalFolder);
+            if (!Directory.Exists(profileDir))
+                Directory.CreateDirectory(profileDir);
+
             var new_fileName = "logImage.txt";
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(message);
             // flush every 20 seconds as you do it
-            File.AppendAllText(Path.Combine(relativePath, storeFolderName, new_fileName), sb.ToString());
+            File.AppendAllText(Path.Combine(profileDir, new_fileName), sb.ToString());
             sb.Clear();
+        }
+
+        private static string GetProfileImageLocalDirectory(MediaSettings mediaSettings)
+        {
+            return Path.Combine(
+                mediaSettings.Profile.FolderPath,
+                ProfileImageLocalFolder,
+                DateTime.UtcNow.Year.ToString(),
+                DateTime.UtcNow.Month.ToString(),
+                DateTime.UtcNow.Day.ToString());
+        }
+
+        private static string GetProfileImageCloudPath(string fileName)
+        {
+            return string.Join(
+                "/",
+                ProfileImageCloudFolder,
+                DateTime.UtcNow.Year.ToString(),
+                DateTime.UtcNow.Month.ToString(),
+                DateTime.UtcNow.Day.ToString(),
+                fileName);
+        }
+
+        private static string GetProfileImageLocalPath(string profileImagePath, MediaSettings mediaSettings)
+        {
+            if (string.IsNullOrWhiteSpace(profileImagePath))
+                return string.Empty;
+
+            var normalizedPath = profileImagePath.Replace("\\", "/").Trim('/');
+            if (normalizedPath.StartsWith("Files/", StringComparison.OrdinalIgnoreCase))
+                normalizedPath = normalizedPath.Substring("Files/".Length);
+
+            return Path.Combine(mediaSettings.Profile.FolderPath, normalizedPath.Replace("/", Path.DirectorySeparatorChar.ToString()));
         }
 
         public static SixLabors.ImageSharp.Image CropFixedSize(SixLabors.ImageSharp.Image image, int width, int height)
@@ -423,10 +459,10 @@ namespace Rino.Utils.Helpers
                             Quality = mediaSettings.FileUpload.ImageQuality
                         };
                         encoder = jpegEncoder;
-                    }               
+                    }
                     var resizedImage = ImageStoreHelper.ResizeImage(image, w, h); //Resizes images
                     var newFileName = ImageStoreHelper.CreateMediaSizePath(Path.GetFileName(filePath), w, h, mediaSettings);
-               
+
 
                     resizedImage.Save(newFileName, encoder); //Saves image foreach Size
                     return newFileName.Replace(stringToReplace, "")

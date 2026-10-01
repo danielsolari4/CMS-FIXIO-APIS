@@ -94,7 +94,7 @@ namespace Rino.BackendApi.Controllers
                 {
                     var formData = await _httpContextAccessor.HttpContext.Request.ReadFormAsync();
 
-                    if (formData.Files.Count < 1 || !_appSettings.Media.Profile.ContentTypeAllowed.Contains(formData.Files[0].ContentType.Replace("image/", string.Empty)))
+                    if (formData.Files.Count < 1)
                     {
                         ModelState.AddModelError("Image", "IMEX_001");
                         throw new ModelException(ModelState.GetErrorMessage());
@@ -103,8 +103,7 @@ namespace Rino.BackendApi.Controllers
                     var file = formData.Files[0];
                     var user = await _manager.GetById(GetLoggedUser().Id);
                     var oldProfileImagePath = user.ProfileImagePath;
-                    user.ProfileImagePath = await ImageStoreHelper.UpdateUserProfileImage(user.ProfileImagePath, file, _appSettings.Media);
-                    await UploadProfileImageToCloud(oldProfileImagePath, user.ProfileImagePath);
+                    user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
                     await _manager.SetProfileImagePath(user);
                     return Ok(user.ProfileImagePath);
                 });
@@ -119,6 +118,12 @@ namespace Rino.BackendApi.Controllers
             return await TryJsonResultAsync(async () =>
             {
                 var formData = await _httpContextAccessor.HttpContext.Request.ReadFormAsync();
+                if (formData.Files.Count < 1)
+                {
+                    ModelState.AddModelError("Image", "IMEX_001");
+                    throw new ModelException(ModelState.GetErrorMessage());
+                }
+
                 var file = formData.Files[0];
 
                 if (file == null)
@@ -133,22 +138,41 @@ namespace Rino.BackendApi.Controllers
                     return BadRequest();
 
                 var oldProfileImagePath = user.ProfileImagePath;
-                user.ProfileImagePath = await ImageStoreHelper.UpdateUserProfileImage(user.ProfileImagePath, file, _appSettings.Media);
-                await UploadProfileImageToCloud(oldProfileImagePath, user.ProfileImagePath);
+                user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
                 await _manager.SetProfileImagePath(user);
                 return Ok(user.ProfileImagePath);
             });
         }
 
-        private async Task UploadProfileImageToCloud(string oldProfileImagePath, string profileImagePath)
+        private async Task<string> UploadProfileImageToCloud(string oldProfileImagePath, IFormFile file)
         {
-            if (string.IsNullOrWhiteSpace(_appSettings.AmazonS3?.BucketName) || string.IsNullOrWhiteSpace(profileImagePath))
-                return;
+            if (file == null || file.Length == 0)
+            {
+                ModelState.AddModelError("Image", "IMEX_001");
+                throw new ModelException(ModelState.GetErrorMessage());
+            }
 
-            var filePath = $"{_appSettings.Media.Profile.FolderPath}{profileImagePath.Replace("/", Path.DirectorySeparatorChar.ToString())}";
-            var result = await _amazonS3Manager.UploadOneFromFileAsync(profileImagePath, filePath, _appSettings.Media.RemoveAfterUpload);
+            if (string.IsNullOrWhiteSpace(_appSettings.AmazonS3?.BucketName))
+            {
+                ModelState.AddModelError("Image", "IMEX_002");
+                throw new ModelException(ModelState.GetErrorMessage());
+            }
+
+            ImageStoreHelper.ValidateProfileImage(file.FileName, file.ContentType, file.Length, _appSettings.Media);
+
+            var profileImagePath = ImageStoreHelper.CreateProfileImageCloudPath(file.FileName);
+            using var stream = file.OpenReadStream();
+            var result = await _amazonS3Manager.UploadOneFromStreamAsync(profileImagePath, stream, file.ContentType);
+            if (result.Error)
+            {
+                ModelState.AddModelError("Image", result.Message ?? "IMEX_003");
+                throw new ModelException(ModelState.GetErrorMessage());
+            }
+
             if (!result.Error && !string.IsNullOrWhiteSpace(oldProfileImagePath))
                 await _amazonS3Manager.DeleteOneAsync(oldProfileImagePath);
+
+            return profileImagePath;
         }
 
         [HttpPut]
