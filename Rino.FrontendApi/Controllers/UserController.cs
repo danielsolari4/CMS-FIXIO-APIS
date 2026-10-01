@@ -59,12 +59,7 @@ namespace Rino.FrontendApi.Controllers
                 var user = await _manager.GetById(GetLoggedUser().Id);
                 var oldProfileImagePath = user.ProfileImagePath;
 
-                using (Stream s = file.OpenReadStream())
-                {
-                    user.ProfileImagePath = Utils.Helpers.ImageStoreHelper.UpdateUserProfileImage(user.ProfileImagePath, s, file.FileName, _appSettings.Media);
-                }
-
-                await UploadProfileImageToCloud(oldProfileImagePath, user.ProfileImagePath);
+                user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
                 await _manager.SetProfileImagePath(user);
                 return Ok(user.ProfileImagePath);
 
@@ -75,15 +70,26 @@ namespace Rino.FrontendApi.Controllers
             }
         }
 
-        private async Task UploadProfileImageToCloud(string oldProfileImagePath, string profileImagePath)
+        private async Task<string> UploadProfileImageToCloud(string oldProfileImagePath, IFormFile file)
         {
-            if (string.IsNullOrWhiteSpace(_appSettings.AmazonS3?.BucketName) || string.IsNullOrWhiteSpace(profileImagePath))
-                return;
+            if (file == null || file.Length == 0)
+                throw new System.Exception("No se encontró ningún archivo subido");
 
-            var filePath = $"{_appSettings.Media.Profile.FolderPath}{profileImagePath.Replace("/", Path.DirectorySeparatorChar.ToString())}";
-            var result = await _amazonS3Manager.UploadOneFromFileAsync(profileImagePath, filePath, _appSettings.Media.RemoveAfterUpload);
+            if (string.IsNullOrWhiteSpace(_appSettings.AmazonS3?.BucketName))
+                throw new System.Exception("La configuración de AmazonS3 no está disponible");
+
+            Utils.Helpers.ImageStoreHelper.ValidateProfileImage(file.FileName, file.ContentType, file.Length, _appSettings.Media);
+
+            var profileImagePath = Utils.Helpers.ImageStoreHelper.CreateProfileImageCloudPath(file.FileName);
+            using var stream = file.OpenReadStream();
+            var result = await _amazonS3Manager.UploadOneFromStreamAsync(profileImagePath, stream, file.ContentType);
+            if (result.Error)
+                throw new System.Exception(result.Message ?? "No se pudo subir la imagen de perfil");
+
             if (!result.Error && !string.IsNullOrWhiteSpace(oldProfileImagePath))
                 await _amazonS3Manager.DeleteOneAsync(oldProfileImagePath);
+
+            return profileImagePath;
         }
 
 

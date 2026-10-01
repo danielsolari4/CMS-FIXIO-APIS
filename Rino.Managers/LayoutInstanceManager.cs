@@ -404,6 +404,7 @@ namespace Rino.Managers
                 entity.IsEnabled = true;
                 entity.CacheSolr = false;
                 await _repository.Update(entity);
+                _cacheInvalidation.InvalidateLayout(entity.NodeId, $"layout:{entity.NodeId} active:{entity.Id}");
             }
             catch (Exception e)
             {
