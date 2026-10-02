@@ -313,9 +313,11 @@ namespace Rino.Managers
 
                         if (order == null || !order.Any()) continue;
 
+                        var selected = order.FirstOrDefault();
+                        if (selected == null || selected.IsEnabled) continue;
+
                         //change current layoutinstance
                         var list = res.Where(x => x.NodeId == it.Id).OrderByDescending(s => s.Id).Take(10).ToList();
-                        if (list.First().IsEnabled) continue;
                         if (list.Any())
                         {
                             foreach (var layoutInstanceOld in list)
@@ -328,7 +330,7 @@ namespace Rino.Managers
                             }
                         }
 
-                        await SetSolrLayoutInstance(order.FirstOrDefault());
+                        await SetSolrLayoutInstance(selected);
                     }
                     catch (Exception ex)
                     {
@@ -356,6 +358,9 @@ namespace Rino.Managers
 
                     if (order != null && order.Any())
                     {
+                        var selected = order.FirstOrDefault();
+                        if (selected == null || selected.IsEnabled) return;
+
                         //change current layoutinstance
                         var layoutInstances = await _repository.Get(x => x.NodeId == nodeId && x.IsEnabled);
                         var list = layoutInstances?.ToList();
@@ -370,7 +375,7 @@ namespace Rino.Managers
                             }
 
                         if (node.IsDiagrammable)
-                            await SetSolrLayoutInstance(order.FirstOrDefault());
+                            await SetSolrLayoutInstance(selected);
                     }
                 }
 
