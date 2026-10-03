@@ -1,0 +1,74 @@
+name: Deploy API Front
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-apifront
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '159.223.183.214' }}
+  DEPLOY_USER: ${{ vars.DEPLOY_USER || 'root' }}
+  DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+  DROPLET_DIR: /root/api-fe
+  SERVICE: frontendapi
+  IMAGE: rinocode/api-fe-frontendapi:latest
+  BASE_NAME: api-fe-frontendapi
+
+jobs:
+  deploy:
+    name: Build and deploy frontend API
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "Missing secret DEPLOY_SSH_KEY" >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f Rino.FrontendApi/Dockerfile \
+            -t "${IMAGE}" \
+            .
+
+      - name: Export image
+        run: |
+          docker save -o "/tmp/${BASE_NAME}.tar" "${IMAGE}"
+          tar -czf "/tmp/${BASE_NAME}.tar.gz" -C /tmp "${BASE_NAME}.tar"
+
+      - name: Upload image to droplet
+        run: |
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" "/tmp/${BASE_NAME}.tar.gz" "${DEPLOY_USER}@${DEPLOY_HOST}:${DROPLET_DIR}/"
+
+      - name: Load image and recreate container
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd ${DROPLET_DIR} && tar -xzf ${BASE_NAME}.tar.gz && docker load -i ${BASE_NAME}.tar && docker compose up -d --force-recreate ${SERVICE} && docker image prune -f"
+
+      - name: Check container
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" "docker ps --filter name=frontendapi"
+
+      - name: Smoke test
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" "curl -sI http://127.0.0.1:8080"
