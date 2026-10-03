@@ -159,7 +159,7 @@ var stopwatch = Stopwatch.StartNew();
             var errors = new List<string>();
             foreach (var path in paths)
             {
-                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}";
+                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}&purgeCdn=true";
                 var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl, appSettings);
                 instanceResult.Attempts += single.Attempts;
 
