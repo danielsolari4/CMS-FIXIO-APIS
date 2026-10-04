@@ -1,27 +1,12 @@
-using System.Linq;
-using System.Net;
-using System.IO;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Web;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Rino.BackendApi.Attributes;
 using Rino.BackendApi.Controllers.ExceptionController;
-using Rino.Dtos;
-using Rino.Dtos.Configuration;
 using Rino.Managers;
-using Rino.Utils.Exception;
-using Rino.Utils.Helpers;
-using Rino.Utils.Solr;
 using SolrCore = Rino.Utils.Solr.SolrCore;
 
 namespace Rino.BackendApi.Controllers
 {
 
     [Route("api/User")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "HasPermissionPolicy")]
     public class UserController : BaseApiController
     {
         private readonly IUserManager _manager;
@@ -110,41 +95,6 @@ namespace Rino.BackendApi.Controllers
                 });
         }
 
-        [AllowAnonymous]
-        [HttpPost]
-        [Route("UpdateFrontProfileImage")]
-        public async Task<IActionResult> UpdateFrontProfileImage(int id = 0)
-        {
-            //TODO: Probar bien esto!!
-            return await TryJsonResultAsync(async () =>
-            {
-                var formData = await _httpContextAccessor.HttpContext.Request.ReadFormAsync();
-                if (formData.Files.Count < 1)
-                {
-                    ModelState.AddModelError("Image", "IMEX_001");
-                    throw new ModelException(ModelState.GetErrorMessage());
-                }
-
-                var file = formData.Files[0];
-
-                if (file == null)
-                {
-                    ModelState.AddModelError("Image", "IMEX_001");
-                    throw new ModelException(ModelState.GetErrorMessage());
-                }
-
-                var userId = id == 0 ? GetLoggedUser().Id : id;
-                var user = await _manager.GetById(userId);
-                if (user == null)
-                    return BadRequest();
-
-                var oldProfileImagePath = user.ProfileImagePath;
-                user.ProfileImagePath = await UploadProfileImageToCloud(oldProfileImagePath, file);
-                await _manager.SetProfileImagePath(user);
-                await TryDeleteOldProfileImage(oldProfileImagePath);
-                return Ok(user.ProfileImagePath);
-            });
-        }
 
         private async Task<string> UploadProfileImageToCloud(string oldProfileImagePath, IFormFile file)
         {

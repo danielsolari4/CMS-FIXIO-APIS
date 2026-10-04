@@ -8,14 +8,17 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using Rino.BackendApi.Attributes;
 using Rino.BackendApi.Models;
 using Rino.Dtos.Configuration;
 using Rino.Dtos.Login;
@@ -23,12 +26,9 @@ using Rino.Managers;
 using Rino.Model.NewContext;
 using Rino.Model.NewContext.Entities;
 using Rino.Utils.Configuration;
+using Rino.Utils.Mail;
 using Rino.Utils.Solr;
 using SolrCore = Rino.Utils.Solr.SolrCore;
-using Microsoft.Extensions.Options;
-using Rino.Utils.Mail;
-using Rino.BackendApi.Attributes;
-using Newtonsoft.Json;
 
 namespace Rino.BackendApi.Controllers
 {
@@ -355,14 +355,14 @@ namespace Rino.BackendApi.Controllers
 
         private async Task<string> BuildToken(User user)
         {
-            var rolesInfo =  _applicationUserManager.GetControllerActionUserAllowedList(user);
+            var rolesInfo = _applicationUserManager.GetControllerActionUserAllowedList(user);
 
             var claims = new List<Claim> {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(rolesInfo)),   
+                new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(rolesInfo)),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -387,7 +387,7 @@ namespace Rino.BackendApi.Controllers
 
         [HttpPost, Route("SaveTwoFactorCode")]
         [AllowAnonymous]
-        public async Task<IActionResult>  SaveTwoFactorCode(TwoFactorModel model)
+        public async Task<IActionResult> SaveTwoFactorCode(TwoFactorModel model)
         {
             //UserManager.
             if (string.IsNullOrEmpty(model.UserName) || string.IsNullOrEmpty(model.Code)) return BadRequest();
@@ -404,7 +404,7 @@ namespace Rino.BackendApi.Controllers
 
         [HttpPost, Route("ChangeTwoFactorEnabled")]
         [AllowAnonymous]
-        public async Task<IActionResult>  ChangeTwoFactorEnabled(TwoFactorUserModel model)
+        public async Task<IActionResult> ChangeTwoFactorEnabled(TwoFactorUserModel model)
         {
             //UserManager.
             if (string.IsNullOrEmpty(model.UserName)) return BadRequest();
@@ -423,7 +423,7 @@ namespace Rino.BackendApi.Controllers
 
         [HttpGet, Route("GetTwoFactorCode")]
         [AllowAnonymous]
-        public async Task<IActionResult>  GetTwoFactorCode(string userName)
+        public async Task<IActionResult> GetTwoFactorCode(string userName)
         {
             var user = await FindUserByUserNameOrEmail(userName);
             if (user == null) return BadRequest();
@@ -717,7 +717,7 @@ namespace Rino.BackendApi.Controllers
                 parameters.Add("*|Url|*", string.Format("{0}?userid={1}&token={2}", _appSettings.Admin.ConfirmUserRequestUrl, currentUser.Id, HttpUtility.UrlEncode(token)));
                 parameters.Add("*|MediaUrl|*", _appSettings.Content.ImageUrl);
                 parameters.Add("*|AdminWebUrl|*", _appSettings.Content.AdminUrl);
-                await _mailSender.Send(EmailTemplateType.CreateUserRequest, currentUser.Email, "Bienvenido a Rino.media", 
+                await _mailSender.Send(EmailTemplateType.CreateUserRequest, currentUser.Email, "Bienvenido a Rino.media",
                     parameters, System.Net.Mail.MailPriority.Normal);
 
                 return Ok();
@@ -930,48 +930,48 @@ namespace Rino.BackendApi.Controllers
         }
 
         // POST api/Account/Register
-        [AllowAnonymous]
-        [Route("Register")]
-        public async Task<IActionResult> Register(RegisterBindingModel model)
-        {
-            if (model == null)
-                ModelState.AddModelError("Model", "GNEX_001");
+        // [AllowAnonymous]
+        // [Route("Register")]
+        // public async Task<IActionResult> Register(RegisterBindingModel model)
+        // {
+        //     if (model == null)
+        //         ModelState.AddModelError("Model", "GNEX_001");
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+        //     if (!ModelState.IsValid)
+        //         return BadRequest(ModelState);
 
-            var user = new User()
-            {
-                UserName = model.Email,
-                Email = model.Email,
-                FirstName = model.FirstName,
-                LastName = model.LastName,
-                Country = model.Country,
-                State = model.State,
-                City = model.City,
-                Address = model.Address,
-                ZipCode = model.ZipCode,
-                CellPhone = model.Cellphone,
-                Description = model.Description,
-                LanguageId = model.LanguageId,
-                TimeZoneId = model.TimeZoneId,
-                IsEnabled = true
-            };
+        //     var user = new User()
+        //     {
+        //         UserName = model.Email,
+        //         Email = model.Email,
+        //         FirstName = model.FirstName,
+        //         LastName = model.LastName,
+        //         Country = model.Country,
+        //         State = model.State,
+        //         City = model.City,
+        //         Address = model.Address,
+        //         ZipCode = model.ZipCode,
+        //         CellPhone = model.Cellphone,
+        //         Description = model.Description,
+        //         LanguageId = model.LanguageId,
+        //         TimeZoneId = model.TimeZoneId,
+        //         IsEnabled = true
+        //     };
 
-            IdentityResult result = await _userManager.CreateAsync(user, model.Password);
+        //     IdentityResult result = await _userManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded)
-            {
-                var currentUser = await _applicationUserManager.FindByName(user.UserName);
-                await _userManager.AddToRoleAsync(currentUser, "Admin");
-            }
-            else
-            {
-                return GetErrorResult(result);
-            }
+        //     if (result.Succeeded)
+        //     {
+        //         var currentUser = await _applicationUserManager.FindByName(user.UserName);
+        //         await _userManager.AddToRoleAsync(currentUser, "Admin");
+        //     }
+        //     else
+        //     {
+        //         return GetErrorResult(result);
+        //     }
 
-            return Ok();
-        }
+        //     return Ok();
+        // }
 
         // POST api/Account/RegisterExternal
         //TODO:ver como implementar y si se usa
@@ -1023,7 +1023,7 @@ namespace Rino.BackendApi.Controllers
                 parameters.Add("*|Fullname|*", currentUser.FirstName + " " + currentUser.LastName);
                 parameters.Add("*|Url|*", string.Format("{0}?email={1}&token={2}", _appSettings.Admin.ConfirmUserRequestFEUrl, HttpUtility.UrlEncode(currentUser.Email), HttpUtility.UrlEncode(token)));
 
-                await _mailSender.Send(EmailTemplateType.ResendInvitation, currentUser.Email, $"Bienvenido a {_smtpSettings.Value.FromDisplayName}", 
+                await _mailSender.Send(EmailTemplateType.ResendInvitation, currentUser.Email, $"Bienvenido a {_smtpSettings.Value.FromDisplayName}",
                     parameters, System.Net.Mail.MailPriority.Normal);
                 return Ok();
             }
