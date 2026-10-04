@@ -1,12 +1,27 @@
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Web;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Rino.BackendApi.Attributes;
 using Rino.BackendApi.Controllers.ExceptionController;
+using Rino.Dtos;
+using Rino.Dtos.Configuration;
 using Rino.Managers;
+using Rino.Utils.Exception;
+using Rino.Utils.Helpers;
+using Rino.Utils.Solr;
 using SolrCore = Rino.Utils.Solr.SolrCore;
 
 namespace Rino.BackendApi.Controllers
 {
 
     [Route("api/User")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "HasPermissionPolicy")]
     public class UserController : BaseApiController
     {
         private readonly IUserManager _manager;
