@@ -38,7 +38,6 @@ namespace Rino.BackendApi.Controllers
     {
         private const string LocalLoginProvider = "Local";
         private readonly UserManager<User> _userManager;
-        private readonly RoleManager<Role> _roleManager;
         private readonly ModelContext _dbContext;
         private readonly AppSettings _appSettings;
         private readonly IServiceProvider _serviceProvider;
@@ -50,7 +49,6 @@ namespace Rino.BackendApi.Controllers
         public AccountController(UserManager<User> identityUserManager,
             ModelContext dbContext,
             AppSettings appSettings, SignInManager<User> signInManager,
-            RoleManager<Role> roleManager,
             IOptions<SMTP> smtpSettings,
             IMailSender mailSender,
             IPasswordHasher<User> passwordHasher,
@@ -62,7 +60,6 @@ namespace Rino.BackendApi.Controllers
             _appSettings = appSettings;
             _signInManager = signInManager;
             _serviceProvider = serviceProvider;
-            _roleManager = roleManager;
             _smtpSettings = smtpSettings;
             _mailSender = mailSender;
             _passwordHasher = passwordHasher;
@@ -441,7 +438,7 @@ namespace Rino.BackendApi.Controllers
             var missing = new List<string>();
             foreach (var roleName in roleNames ?? Enumerable.Empty<string>())
             {
-                if (!await _roleManager.RoleExistsAsync(roleName))
+                if (!await _dbContext.Roles.AnyAsync(role => role.Name == roleName))
                     missing.Add(roleName);
             }
 

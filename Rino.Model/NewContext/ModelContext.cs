@@ -1184,6 +1184,7 @@ namespace Rino.Model.NewContext
                 entity.Property(f => f.Id).ValueGeneratedOnAdd().UseIdentityColumn(1, 1);
 
                 entity.Ignore(e => e.ConcurrencyStamp);
+                entity.Ignore(e => e.NormalizedName);
 
                 entity.Property(e => e.Name)
                     .IsRequired()
@@ -1308,6 +1309,8 @@ namespace Rino.Model.NewContext
 
                 entity.Ignore(e => e.ConcurrencyStamp);
                 entity.Ignore(e => e.LockoutEnd);
+                entity.Ignore(e => e.NormalizedEmail);
+                entity.Ignore(e => e.NormalizedUserName);
 
                 entity.HasIndex(e => new { e.Id, e.Discriminator }, "IX_Discriminator_Id_User");
 
