@@ -27,11 +27,13 @@ namespace Rino.Managers
     {
         private readonly IMenuRepository _repository;
         private readonly AppSettings _appSettings;
+        private readonly ICacheInvalidationManager _cacheInvalidation;
 
-        public MenuManager(IMenuRepository repository, AppSettings appSettings)
+        public MenuManager(IMenuRepository repository, AppSettings appSettings, ICacheInvalidationManager cacheInvalidation)
         {
             _repository = repository;
             _appSettings = appSettings;
+            _cacheInvalidation = cacheInvalidation;
         }
 
         public ICollection<ItemType> GetTypes()
@@ -215,7 +217,7 @@ namespace Rino.Managers
                 await _repository.Update(exists);
 
                 dto.Id = exists.Id;
-                await SolrHelper.DataImport(SolrCore.MENU, _appSettings.Solr, true);
+                await ReindexAndInvalidateMenu(dto.Type, "menu:update");
 
                 return dto;
             }
@@ -223,7 +225,7 @@ namespace Rino.Managers
             var result = await _repository.Add(entity);
             var json = JsonConvert.SerializeObject(result);
 
-            await SolrHelper.DataImport(SolrCore.MENU, _appSettings.Solr, true);
+            await ReindexAndInvalidateMenu(dto.Type, "menu:add");
 
             return JsonConvert.DeserializeObject<MenuJson>(json);
 
@@ -243,7 +245,7 @@ namespace Rino.Managers
 
             await _repository.Update(node);
 
-            await SolrHelper.DataImport(SolrCore.MENU, _appSettings.Solr, true);
+            await ReindexAndInvalidateMenu(dto.Type, "menu:update");
         }
         public async Task Delete(MenuJson dto)
         {
@@ -251,7 +253,18 @@ namespace Rino.Managers
 
             await _repository.Update(node);
 
-            await SolrHelper.DataImport(SolrCore.MENU, _appSettings.Solr, true);
+            await ReindexAndInvalidateMenu(node?.MenuType ?? dto.Type, "menu:delete");
+        }
+
+        private async Task ReindexAndInvalidateMenu(int menuType, string reason)
+        {
+            await SolrHelper.DataImportAndWait(SolrCore.MENU, _appSettings.Solr, true);
+
+            var paths = menuType > 0
+                ? new[] { $"/api/site/navigation/{menuType}" }
+                : new[] { "/api/site/navigation/1", "/api/site/navigation/2" };
+
+            _cacheInvalidation.InvalidatePaths(paths, reason);
         }
 
         public async Task<int> Count()
