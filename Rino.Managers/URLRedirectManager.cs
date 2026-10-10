@@ -12,7 +12,9 @@ using Rino.Managers.Core;
 using Rino.Managers.MapperProfiles;
 using Rino.Model.NewContext.Entities;
 using Rino.Repositories;
+using Rino.Utils.Cache;
 using Rino.Utils.Exception;
+using Rino.Utils.Logging;
 using Rino.Utils.Solr;
 using SolrCore = Rino.Utils.Solr.SolrCore;
 
@@ -45,15 +47,19 @@ namespace Rino.Managers
 
         public async Task<URLRedirectDto> Add(URLRedirectDto entity)
         {
+            entity.From = NormalizeFrom(entity.From);
+            entity.To = NormalizeTo(entity.To);
+
             //Validate own entity (URLRedirect)
             if (_repository.Get(x => x.From == entity.From && x.IsDeleted == false).Result.Any())
                 throw new Exception("ULEX_001");
+
             var ent = _Mapper.Map<URLRedirect>(entity);
             ent.CacheSolr = false;
 
             await _repository.Add(ent);
 
-            await SolrHelper.DataImport(SolrCore.URLREDIRECT, _appSettings.Solr);
+            await RefreshRedirectsCache($"redirect:add:{ent.Id}", ent.From);
             
             return new URLRedirectDto
             {
@@ -71,11 +77,12 @@ namespace Rino.Managers
         public async Task Delete(URLRedirectDto entity)
         {
             var urlToDeleted = await _repository.GetById(entity.Id);
+            var deletedFrom = urlToDeleted.From;
             urlToDeleted.IsDeleted = true;
             urlToDeleted.CacheSolr = false;
             await _repository.Update(urlToDeleted);
 
-            await SolrHelper.DataImport(SolrCore.URLREDIRECT, _appSettings.Solr);
+            await RefreshRedirectsCache($"redirect:delete:{urlToDeleted.Id}", deletedFrom);
             
         }
 
@@ -127,13 +134,74 @@ namespace Rino.Managers
             if (redirect == null)
                 throw new ItemNotFoundException("redirect");
 
-            redirect.From = dto.From;
-            redirect.To = dto.To;
+            var previousFrom = redirect.From;
+            redirect.From = NormalizeFrom(dto.From);
+            redirect.To = NormalizeTo(dto.To);
             redirect.CacheSolr = false;
 
             await _repository.Update(redirect);
-            await SolrHelper.DataImport(SolrCore.URLREDIRECT, _appSettings.Solr);
+            await RefreshRedirectsCache($"redirect:update:{redirect.Id}", previousFrom, redirect.From);
             
+        }
+
+        public static string NormalizeFrom(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var normalized = value.Trim();
+            var queryIndex = normalized.IndexOfAny(new[] { '?', '#' });
+            if (queryIndex >= 0)
+                normalized = normalized.Substring(0, queryIndex);
+
+            normalized = normalized.Replace("\\", "/");
+            while (normalized.Contains("//"))
+                normalized = normalized.Replace("//", "/");
+
+            if (!normalized.StartsWith("/"))
+                normalized = "/" + normalized;
+
+            if (normalized.Length > 1)
+                normalized = normalized.TrimEnd('/');
+
+            return normalized.ToLowerInvariant();
+        }
+
+        private static string NormalizeTo(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var normalized = value.Trim();
+            if (normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                return normalized;
+
+            normalized = normalized.Replace("\\", "/");
+            while (normalized.Contains("//"))
+                normalized = normalized.Replace("//", "/");
+
+            if (!normalized.StartsWith("/"))
+                normalized = "/" + normalized;
+
+            return normalized;
+        }
+
+        private async Task RefreshRedirectsCache(string reason, params string[] paths)
+        {
+            var imported = await SolrHelper.DataImportAndWait(SolrCore.URLREDIRECT, _appSettings.Solr);
+            if (!imported)
+                CMSLogger.Warn($"[redirect-cache] Solr import did not finish before cache clear: {reason}");
+
+            try
+            {
+                var result = await FrontendCacheClient.InvalidateRedirects(_appSettings, reason, paths);
+                if (!result.Success)
+                    CMSLogger.Warn($"[redirect-cache] frontend cache clear incomplete ({reason}): {JsonConvert.SerializeObject(result)}");
+            }
+            catch (System.Exception ex)
+            {
+                CMSLogger.Error($"[redirect-cache] frontend cache clear failed ({reason}): {ex.Message}");
+            }
         }
 
         private async void UpdateSiteRedirects()
