@@ -152,9 +152,7 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
             InvalidatePortadaIndex();
 
             var paths = new List<string>();
-            var nodePath = await GetNodePath(nodeId);
-            if (nodePath != null)
-                paths.Add(nodePath);
+            paths.AddRange(await GetNodePaths(nodeId));
 
             paths.Add($"/api/layoutinstance/{nodeId}");
             paths.Add("/api/node/getMain");
@@ -188,9 +186,7 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
 
             foreach (var nodeId in await GetNodesWithNewsInPortada(newsId))
             {
-                var nodePath = await GetNodePath(nodeId);
-                if (nodePath != null)
-                    paths.Add(nodePath);
+                paths.AddRange(await GetNodePaths(nodeId));
 
                 paths.Add($"/api/layoutinstance/{nodeId}");
             }
@@ -222,24 +218,67 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
             }
         }
 
-        private async Task<string> GetNodePath(int nodeId)
+        private async Task<IList<string>> GetNodePaths(int nodeId)
         {
             try
             {
                 var node = await _nodes.GetById(nodeId);
                 if (node == null || node.IsDeleted)
-                    return null;
+                    return new List<string>();
 
                 if (node.ParentNodeId == null)
-                    return "/";
+                    return new List<string> { "/" };
 
-                return string.IsNullOrWhiteSpace(node.Description) ? null : "/" + node.Description.Trim('/');
+                return BuildNodePathVariants(node.Description);
             }
             catch (Exception ex)
             {
                 CMSLogger.Error($"[cache-invalidation] node path failed for {nodeId}: {ex.Message}");
-                return null;
+                return new List<string>();
             }
+        }
+
+        private static IList<string> BuildNodePathVariants(string description)
+        {
+            var paths = new List<string>();
+            if (string.IsNullOrWhiteSpace(description))
+                return paths;
+
+            var clean = description.Trim().Trim('/');
+            if (clean.Length == 0)
+                return new List<string> { "/" };
+
+            AddNodePathVariant(paths, "/" + clean);
+            AddNodePathVariant(paths, "/" + clean.ToLowerInvariant());
+
+            var slugified = string.Join("/", clean
+                .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(FrontSlug.Slugify)
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            if (!string.IsNullOrWhiteSpace(slugified))
+                AddNodePathVariant(paths, "/" + slugified);
+
+            return paths;
+        }
+
+        private static void AddNodePathVariant(ICollection<string> paths, string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            var value = path.Trim();
+            if (!value.StartsWith("/"))
+                value = "/" + value;
+
+            while (value.Contains("//"))
+                value = value.Replace("//", "/");
+
+            if (value.Length > 1)
+                value = value.TrimEnd('/');
+
+            if (!paths.Contains(value))
+                paths.Add(value);
         }
 
         private async Task<NewsCacheSnapshot> ReadSnapshotFromSolr(int newsId)

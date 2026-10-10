@@ -76,9 +76,11 @@ var stopwatch = Stopwatch.StartNew();
         /// legacy (el /api/ops/rebuild viejo no purgeaba redirects), así que requiere token.
         /// Path del endpoint configurable vía FrontEnd__CacheInvalidation__RedirectsEndpoint.
         /// </summary>
-        public static async Task<CacheInvalidationResult> InvalidateRedirects(AppSettings appSettings, string reason = null)
+        public static async Task<CacheInvalidationResult> InvalidateRedirects(AppSettings appSettings, string reason = null, IEnumerable<string> paths = null)
         {
             var result = new CacheInvalidationResult { Reason = reason };
+            var normalized = NormalizePaths(paths);
+            result.Paths = normalized;
 
             var instances = GetFrontendInstances(appSettings);
             if (instances.Count == 0)
@@ -99,7 +101,7 @@ var stopwatch = Stopwatch.StartNew();
             var stopwatch = Stopwatch.StartNew();
             foreach (var instance in instances)
             {
-                result.Instances.Add(await PostRedirects(instance, token, appSettings));
+                result.Instances.Add(await PostRedirects(instance, token, appSettings, normalized));
             }
 
             stopwatch.Stop();
@@ -177,22 +179,31 @@ var stopwatch = Stopwatch.StartNew();
             return instanceResult;
         }
 
-        private static async Task<CacheInvalidationInstanceResult> PostRedirects(string baseUrl, string token, AppSettings appSettings)
+        private static async Task<CacheInvalidationInstanceResult> PostRedirects(string baseUrl, string token, AppSettings appSettings, IList<string> paths)
         {
             var endpointPath = GetSetting("FrontEnd__CacheInvalidation__RedirectsEndpoint");
             if (string.IsNullOrWhiteSpace(endpointPath))
                 endpointPath = "/api/redirects/cache";
 
+            var payload = JsonConvert.SerializeObject(new
+            {
+                paths,
+                purgeCdn = paths.Count > 0
+            });
+
             var url = baseUrl.TrimEnd('/') + endpointPath;
-            return await SendWithRetries(() =>
+            var result = await SendWithRetries(() =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent(payload, Encoding.UTF8, "application/json")
                 };
                 request.Headers.Add("Authorization", "Bearer " + token);
                 return request;
             }, baseUrl, appSettings);
+
+            result.PurgedCdn = paths.Count > 0;
+            return result;
         }
 
         private static async Task<CacheInvalidationInstanceResult> SendWithRetries(Func<HttpRequestMessage> requestFactory, string baseUrl, AppSettings appSettings)

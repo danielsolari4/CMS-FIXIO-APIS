@@ -70,9 +70,14 @@ namespace Rino.BackendApi.Controllers
         {
             return await TryJsonResultAsync(async () =>
             {
+                var normalizedFrom = URLRedirectManager.NormalizeFrom(urlRedirectDto.From);
+                var nodeDescription = normalizedFrom?.Trim('/');
+
                 //Validate Node entity (Node)
-                if (_nodeRepository.Get(x => x.IsDeleted == false && x.Description == urlRedirectDto.From).Result.Any())
+                if (_nodeRepository.Get(x => x.IsDeleted == false && (x.Description == normalizedFrom || x.Description == nodeDescription)).Result.Any())
                     throw new AlreadyExistsException("redirect");
+
+                urlRedirectDto.From = normalizedFrom;
 
                 if (!ModelState.IsValid)
                     throw new ModelException(ModelState.GetErrorMessage());

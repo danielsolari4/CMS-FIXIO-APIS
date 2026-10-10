@@ -162,7 +162,6 @@ namespace Rino.Managers
             await SyncLayoutInstance(li, entity.CurrentPublication);
 
             await SolrHelper.DataImport(SolrCore.LAYOUTINSTANCE, _appSettings.Solr);
-            _cacheInvalidation.InvalidateLayout(entity.NodeId, $"layout:{entity.NodeId} add");
 
             entity.Id = li.Id;
 
@@ -186,7 +185,7 @@ namespace Rino.Managers
                 "NodeId:" + id, _appSettings.Solr);
 
             await SolrHelper.DataImport(SolrCore.LAYOUTINSTANCE, _appSettings.Solr);
-            _cacheInvalidation.InvalidateLayout(id, $"layout:{id} deactivate");
+            await _cacheInvalidation.InvalidateLayoutNow(id, $"layout:{id} deactivate");
 
             return true;
         }
@@ -215,7 +214,6 @@ namespace Rino.Managers
 
 
             await SolrHelper.DataImport(SolrCore.LAYOUTINSTANCE, _appSettings.Solr);
-            _cacheInvalidation.InvalidateLayout(entity.NodeId, $"layout:{entity.NodeId} update");
         }
 
         public Task Delete(LayoutInstanceDto entity)
@@ -409,7 +407,7 @@ namespace Rino.Managers
                 entity.IsEnabled = true;
                 entity.CacheSolr = false;
                 await _repository.Update(entity);
-                _cacheInvalidation.InvalidateLayout(entity.NodeId, $"layout:{entity.NodeId} active:{entity.Id}");
+                await _cacheInvalidation.InvalidateLayoutNow(entity.NodeId, $"layout:{entity.NodeId} active:{entity.Id}");
             }
             catch (Exception e)
             {
