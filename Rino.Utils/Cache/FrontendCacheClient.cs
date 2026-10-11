@@ -217,12 +217,13 @@ var stopwatch = Stopwatch.StartNew();
                 try
                 {
                     using var request = requestFactory();
-                    var response = await Client.SendAsync(request);
+                    using var response = await Client.SendAsync(request);
                     result.StatusCode = (int)response.StatusCode;
-                    result.Success = response.IsSuccessStatusCode;
-                    result.Error = response.IsSuccessStatusCode ? null : await response.Content.ReadAsStringAsync();
+                    // The frontend uses 207 when some cache layers could not be invalidated.
+                    result.Success = response.IsSuccessStatusCode && result.StatusCode != 207;
+                    result.Error = result.Success ? null : await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode || !IsRetryable(result.StatusCode))
+                    if (result.Success || !IsRetryable(result.StatusCode))
                         return result;
                 }
                 catch (System.Exception ex)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Rino.Dtos;
 using Rino.Dtos.Configuration;
 using Rino.Dtos.Factories.Html;
@@ -396,7 +397,7 @@ namespace Rino.Managers
         private async Task SetSolrLayoutInstance(LayoutInstance entity)
         {
 
-            System.Threading.Thread.Sleep(1000);
+            await Task.Delay(1000);
 
             try
             {
@@ -410,6 +411,7 @@ namespace Rino.Managers
                 await SolrHelper.AddLayoutInstanceByNode(SolrCore.LAYOUTINSTANCEBYNODE,
                     new List<dynamic>() { instanceSolr }, _appSettings.Solr);
 
+                await WaitForLayoutInstanceByNode(entity.NodeId, entity.Id);
 
                 entity.IsEnabled = true;
                 entity.CacheSolr = false;
@@ -422,6 +424,37 @@ namespace Rino.Managers
 
             }
 
+        }
+
+        private async Task WaitForLayoutInstanceByNode(int nodeId, int layoutInstanceId)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    var raw = await SolrHelper.ExecuteQuery(
+                        SolrCore.LAYOUTINSTANCEBYNODE,
+                        $"q=NodeId:{nodeId}&rows=1&fl=LayoutInstanceId",
+                        _appSettings.Solr);
+
+                    var docs = (raw as JObject)?["response"]?["docs"] as JArray;
+                    var currentLayoutInstanceId = docs?.FirstOrDefault()?.Value<int?>("LayoutInstanceId");
+
+                    if (currentLayoutInstanceId == layoutInstanceId)
+                        return;
+                }
+                catch (Exception ex)
+                {
+                    CMSLogger.Error($"[layout-cache] Solr check failed for node {nodeId}: {ex.Message}");
+                    return;
+                }
+
+                await Task.Delay(250);
+            }
+
+            CMSLogger.Error($"[layout-cache] Timeout waiting Solr layout node {nodeId} instance {layoutInstanceId}");
         }
 
         private async Task<dynamic> GenerateLayoutInstsanceSolrAsync(LayoutInstance layoutInstance)

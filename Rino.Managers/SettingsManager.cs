@@ -22,10 +22,13 @@ namespace Rino.Managers
     {
         private readonly ISettingsRepository _repository;
         private readonly AppSettings _appSettings;
-        public SettingsManager(ISettingsRepository repository, AppSettings appSettings)
+        private readonly ICacheInvalidationManager _cacheInvalidation;
+
+        public SettingsManager(ISettingsRepository repository, AppSettings appSettings, ICacheInvalidationManager cacheInvalidation)
         {
             _repository = repository;
             _appSettings = appSettings;
+            _cacheInvalidation = cacheInvalidation;
         }
 
         public async Task<ICollection<SettingsDto>> GetAll(int? skip = null, int? take = null)
@@ -68,7 +71,7 @@ namespace Rino.Managers
             {
                 var entity = dto.Map();
                 entity = await _repository.Add(entity);
-                return entity.Map();
+                dto = entity.Map();
             }
             else
             {
@@ -78,7 +81,7 @@ namespace Rino.Managers
                 await _repository.Update(entity);
             }
 
-            await SolrHelper.DataImport(SolrCore.SETTINGSCORE, _appSettings.Solr, true);
+            await ReindexAndInvalidate(dto.Name);
 
             return dto;
         }
@@ -98,7 +101,7 @@ namespace Rino.Managers
 
             await _repository.Update(settings.Map(dto));
 
-            await SolrHelper.DataImport(SolrCore.SETTINGSCORE, _appSettings.Solr, true);
+            await ReindexAndInvalidate(dto.Name);
         }
 
         public async Task Delete(SettingsDto dto)
@@ -112,7 +115,23 @@ namespace Rino.Managers
 
             await _repository.Update(settings);
 
-            await SolrHelper.DataImport(SolrCore.SETTINGSCORE, _appSettings.Solr, true);
+            await ReindexAndInvalidate(settings.Name);
+        }
+
+        private async Task ReindexAndInvalidate(string settingName)
+        {
+            await SolrHelper.DataImportAndWait(SolrCore.SETTINGSCORE, _appSettings.Solr, true);
+
+            string path = null;
+            if (string.Equals(settingName, "Shorts", StringComparison.OrdinalIgnoreCase))
+                path = "/api/media/shorts";
+            else if (string.Equals(settingName, "LiveStream", StringComparison.OrdinalIgnoreCase))
+                path = "/api/broadcast/live";
+            else if (string.Equals(settingName, "AdsText", StringComparison.OrdinalIgnoreCase))
+                path = "/ads.txt";
+
+            if (path != null)
+                _cacheInvalidation.InvalidatePaths(new[] { path }, $"settings:{settingName}");
         }
 
         public async Task<int> Count()

@@ -229,7 +229,15 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
                 if (node.ParentNodeId == null)
                     return new List<string> { "/" };
 
-                return BuildNodePathVariants(node.Description);
+                var paths = new List<string>();
+                foreach (var path in BuildNodePathVariants(node.Description))
+                    AddNodePathVariant(paths, path);
+
+                var fullPath = await BuildNodeFullPath(node);
+                foreach (var path in BuildNodePathVariants(fullPath))
+                    AddNodePathVariant(paths, path);
+
+                return paths;
             }
             catch (Exception ex)
             {
@@ -260,6 +268,34 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
                 AddNodePathVariant(paths, "/" + slugified);
 
             return paths;
+        }
+
+        private async Task<string> BuildNodeFullPath(Node node)
+        {
+            var segments = new List<string>();
+            var current = node;
+            var guard = 0;
+
+            while (current != null && guard++ < 25)
+            {
+                if (current.ParentNodeId == null)
+                    break;
+
+                var description = current.Description?.Trim().Trim('/');
+                if (!string.IsNullOrWhiteSpace(description))
+                {
+                    if (description.Contains("/"))
+                        return description;
+
+                    segments.Insert(0, description);
+                }
+
+                current = current.ParentNodeId.HasValue
+                    ? await _nodes.GetById(current.ParentNodeId.Value)
+                    : null;
+            }
+
+            return string.Join("/", segments);
         }
 
         private static void AddNodePathVariant(ICollection<string> paths, string path)
