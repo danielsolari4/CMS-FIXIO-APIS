@@ -27,7 +27,7 @@ namespace Rino.Managers
         ICollection<LayoutInstanceMicrositeDto> GetLayoutsByNodeId(int id);
 
         Task<bool> Deactivate(int id);
-        Task SyncAllLayoutInstances(int? nodeId = null);
+        Task SyncAllLayoutInstances(int? nodeId = null, bool force = false);
     }
 
     public class LayoutInstanceManager : BaseManager, ILayoutInstanceManager
@@ -287,7 +287,7 @@ namespace Rino.Managers
             }
         }
 
-        public async Task SyncAllLayoutInstances(int? nodeId = null)
+        public async Task SyncAllLayoutInstances(int? nodeId = null, bool force = false)
         {
             if (nodeId == null)
             {
@@ -357,7 +357,8 @@ namespace Rino.Managers
                     if (order != null && order.Any())
                     {
                         var selected = order.FirstOrDefault();
-                        if (selected == null || selected.IsEnabled) return;
+                        if (selected == null) return;
+                        if (selected.IsEnabled && !force) return;
 
                         //change current layoutinstance
                         var layoutInstances = await _repository.Get(x => x.NodeId == nodeId && x.IsEnabled);
@@ -374,6 +375,12 @@ namespace Rino.Managers
 
                         if (node.IsDiagrammable)
                             await SetSolrLayoutInstance(selected);
+                        else if (force)
+                            await _cacheInvalidation.InvalidateLayoutNow(node.Id, $"layout:{node.Id} refresh");
+                    }
+                    else if (force)
+                    {
+                        await _cacheInvalidation.InvalidateLayoutNow(node.Id, $"layout:{node.Id} refresh");
                     }
                 }
 

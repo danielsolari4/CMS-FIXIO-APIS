@@ -12,6 +12,7 @@ using Rino.Model.NewContext.Entities;
 using Rino.Repositories;
 using Rino.Utils.Configuration;
 using Rino.Utils.Exception;
+using Rino.Utils.Logging;
 using Rino.Utils.Solr;
 using SolrCore = Rino.Utils.Solr.SolrCore;
 
@@ -28,11 +29,13 @@ namespace Rino.Managers
     public class PageManager : AssetManager, IPageManager
     {
         private readonly AppSettings _appSettings;
+        private readonly ILayoutInstanceManager _layoutInstanceManager;
 
-        public PageManager(IAssetRepository repository, INodeRepository nodeRepository, IKeywordRepository keywordRepository, IMediaRepository mediaRepository, IGalleryRepository galleryRepository, IUserRepository userRepository, ISocialNetworkRepository socialNetworkRepository, AppSettings appSettings)
+        public PageManager(IAssetRepository repository, INodeRepository nodeRepository, IKeywordRepository keywordRepository, IMediaRepository mediaRepository, IGalleryRepository galleryRepository, IUserRepository userRepository, ISocialNetworkRepository socialNetworkRepository, AppSettings appSettings, ILayoutInstanceManager layoutInstanceManager)
             : base(repository, nodeRepository, galleryRepository, mediaRepository, keywordRepository, userRepository, socialNetworkRepository)
         {
             _appSettings = appSettings;
+            _layoutInstanceManager = layoutInstanceManager;
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
                 cfg.ShouldMapMethod = methodInfo => false;
@@ -99,9 +102,11 @@ namespace Rino.Managers
                 throw new EntityException("dto");
 
             var page = (Page)await _repository.Add(await MapFromDto(dto));
+            var nodeIds = GetNodeIds(dto, page);
 
             await SolrHelper.DataImport(SolrCore.PAGE, _appSettings.Solr);
             await SolrHelper.DataImport(SolrCore.KEYWORD, _appSettings.Solr);
+            await RefreshFrontendByNodes(nodeIds);
 
             return MapToDto(page);
         }
@@ -111,15 +116,18 @@ namespace Rino.Managers
             if (dto == null)
                 throw new EntityException("dto");
 
-            var page = (await _repository.Get(p => p.Id == dto.Id && !p.IsDeleted)).OfType<Page>().SingleOrDefault();
+            var page = (await _repository.Get(p => p.Id == dto.Id && !p.IsDeleted)).Include(x => x.AssetNodes).OfType<Page>().SingleOrDefault();
 
             if (page == null)
                 throw new EntityException("page");
+
+            var nodeIds = GetNodeIds(dto, page);
 
             await _repository.Update(await MapFromDto(dto, page));
 
             await SolrHelper.DataImport(SolrCore.PAGE, _appSettings.Solr);
             await SolrHelper.DataImport(SolrCore.KEYWORD, _appSettings.Solr);
+            await RefreshFrontendByNodes(nodeIds);
         }
 
         public async Task Delete(PageDto dto)
@@ -135,6 +143,7 @@ namespace Rino.Managers
             await _repository.Update(page);
             await SolrHelper.DataImport(SolrCore.PAGE, _appSettings.Solr);
 
+            var nodeIds = GetNodeIds(dto, page);
             var node = page?.AssetNodes?.FirstOrDefault();
             if (node != null)
             {
@@ -142,6 +151,8 @@ namespace Rino.Managers
                 await _nodeRepository.Update(node.Node);
                 await SolrHelper.DataImport(SolrCore.NODE, _appSettings.Solr);
             }
+
+            await RefreshFrontendByNodes(nodeIds);
         }
 
         public async Task UpdateCounts(CountDto dto)
@@ -163,6 +174,36 @@ namespace Rino.Managers
         public async Task<int> Count()
         {
             return await _repository.Count();
+        }
+
+        private static IEnumerable<int> GetNodeIds(PageDto dto, Page page = null)
+        {
+            var nodeIds = new List<int>();
+
+            if (dto?.Nodes != null)
+                nodeIds.AddRange(dto.Nodes.Where(x => x != null).Select(x => x.Id));
+
+            if (page?.AssetNodes != null)
+                nodeIds.AddRange(page.AssetNodes.Where(x => x != null).Select(x => x.NodeId));
+
+            return nodeIds.Where(x => x > 0).Distinct().ToList();
+        }
+
+        private async Task RefreshFrontendByNodes(IEnumerable<int> nodeIds)
+        {
+            if (nodeIds == null) return;
+
+            foreach (var nodeId in nodeIds.Where(x => x > 0).Distinct())
+            {
+                try
+                {
+                    await _layoutInstanceManager.SyncAllLayoutInstances(nodeId, true);
+                }
+                catch (Exception ex)
+                {
+                    CMSLogger.Error($"Error refreshing frontend layout cache for node {nodeId}: {ex.Message}");
+                }
+            }
         }
 
         private PageDto MapToDto(Asset page, bool includeContent = false, bool includeNodes = false, bool includeMedia = false, bool includeGalleries = false, int? languageId = null)
