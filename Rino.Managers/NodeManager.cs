@@ -95,6 +95,7 @@ namespace Rino.Managers
             var node = await MapFromDto(dto);
 
             UpdateKeywords(dto, node);
+            await ValidateSection(node);
 
             var result = await _repository.Add(node);
 
@@ -165,6 +166,7 @@ namespace Rino.Managers
             var nodeToUpdate = await MapFromDto(dto, node);
 
             UpdateKeywords(dto, node);
+            await ValidateSection(nodeToUpdate);
 
             await _repository.Update(nodeToUpdate);
 
@@ -476,6 +478,20 @@ namespace Rino.Managers
                 }
             }
             return dto;
+        }
+
+        private async Task ValidateSection(Node node)
+        {
+            if (node.Id > 0 && node.ParentNodeId.HasValue && node.ParentNodeId.Value == node.Id)
+                throw new EntityException("Un nodo no puede ser padre de sí mismo.");
+
+            if (string.IsNullOrWhiteSpace(node.Description))
+                return;
+
+            var description = node.Description.Trim();
+            var duplicates = await _repository.Get(x => !x.IsDeleted && x.Description == description && x.Id != node.Id);
+            if (duplicates.Any())
+                throw new AlreadyExistsException("Ya existe una sección con el slug " + description + ".");
         }
 
         private async Task<Node> MapFromDto(NodeDto nodeDto, Node node = null)

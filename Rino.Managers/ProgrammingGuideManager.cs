@@ -30,8 +30,9 @@ namespace Rino.Managers
         private readonly ProgrammingGuideScheduleRepository _ProgrammingGuideSchedulesRepository;
         private readonly IProgramGalleryRepository _programGalleryRepository;
         private readonly AppSettings _appSettings;
+        private readonly ICacheInvalidationManager _cacheInvalidation;
 
-        public ProgrammingGuideManager(IProgrammingGuideRepository repository, IMediaRepository mediaRepository, INodeRepository nodeRepository, ProgrammingGuideScheduleRepository ProgrammingGuideSchedulesRepository, IProgramGalleryRepository programGalleryRepository, AppSettings appSettings)
+        public ProgrammingGuideManager(IProgrammingGuideRepository repository, IMediaRepository mediaRepository, INodeRepository nodeRepository, ProgrammingGuideScheduleRepository ProgrammingGuideSchedulesRepository, IProgramGalleryRepository programGalleryRepository, AppSettings appSettings, ICacheInvalidationManager cacheInvalidation)
         {
             _repository = repository;
             _mediaRepository = mediaRepository;
@@ -39,6 +40,7 @@ namespace Rino.Managers
             _ProgrammingGuideSchedulesRepository = ProgrammingGuideSchedulesRepository;
             _programGalleryRepository = programGalleryRepository;
             _appSettings = appSettings;
+            _cacheInvalidation = cacheInvalidation;
 
             var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
             {
@@ -116,8 +118,7 @@ namespace Rino.Managers
 
             var programmingGuide = await _repository.Add(program);
 
-            await SolrHelper.DataImport(SolrCore.PROGRAMMINGGUIDE, _appSettings.Solr);
-
+            await PublishProgrammingGuide(programmingGuide.Channel);
 
             return MapToDto(programmingGuide);
         }
@@ -131,6 +132,8 @@ namespace Rino.Managers
 
             if (programmingGuide == null)
                 throw new EntityException("programmingGuide");
+
+            var previousChannelId = programmingGuide.Channel;
 
             var existingProgrammingGuide = await _repository.Get(g => g.ProgramName.ToLower().Equals(dto.ProgramName.ToLower()) && g.Id != dto.Id && !g.IsDeleted);
 
@@ -163,7 +166,7 @@ namespace Rino.Managers
 
             program.Featured = dto.Featured;
             await _repository.Update(program);
-            await SolrHelper.DataImport(SolrCore.PROGRAMMINGGUIDE, _appSettings.Solr);
+            await PublishProgrammingGuide(program.Channel, previousChannelId);
         }
 
         public async Task Delete(ProgrammingGuideDto dto)
@@ -178,7 +181,28 @@ namespace Rino.Managers
             programmingGuide.CacheSolr = false;
 
             await _repository.Update(programmingGuide);
-            await SolrHelper.DataImport(SolrCore.PROGRAMMINGGUIDE, _appSettings.Solr);
+            await PublishProgrammingGuide(programmingGuide.Channel);
+        }
+
+        private async Task PublishProgrammingGuide(int channelId, int? previousChannelId = null)
+        {
+            await SolrHelper.DataImportAndWait(SolrCore.PROGRAMMINGGUIDE, _appSettings.Solr);
+
+            var paths = new List<string>
+            {
+                "/api/site/header",
+                "/api/channel",
+                "/api/schedule",
+                "/programacion"
+            };
+
+            if (channelId > 0)
+                paths.Add("/api/schedule/" + channelId);
+
+            if (previousChannelId.HasValue && previousChannelId.Value > 0 && previousChannelId.Value != channelId)
+                paths.Add("/api/schedule/" + previousChannelId.Value);
+
+            _cacheInvalidation.InvalidatePaths(paths, "programming-guide:" + channelId);
         }
 
         public async Task<int> Count()
