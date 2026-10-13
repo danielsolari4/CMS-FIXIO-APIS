@@ -22,7 +22,6 @@ namespace Rino.Dtos.Configuration
         public AmazonS3 AmazonS3 { get; set; }
         public TokenSettings TokenSettings { get; set; }
         public MongoDb MongoDb { get; set; }
-        public AddThis AddThis { get; set; }
         public MobileApp MobileApp { get; set; }
         public SyncLayout SyncLayout { get; set; }
         public CacheInvalidation CacheInvalidation { get; set; }
@@ -293,12 +292,5 @@ namespace Rino.Dtos.Configuration
         public string DatabaseName { get; set; }
         public string NameCollectionAssetsViewCount { get; set; }
         public string NameCollectionNewsViewStats { get; set; }
-    }
-
-    public class AddThis
-    {
-        public string Url { get; set; }
-        public string Token { get; set; }
-        public string XApiKey { get; set; }
     }
 }

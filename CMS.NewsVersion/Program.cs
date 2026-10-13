@@ -1,5 +1,7 @@
+using CMS.NewsVersion.Configuration;
 using CMS.NewsVersion.Context;
 using CMS.NewsVersion.Helpers.Solr;
+using CMS.NewsVersion.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
@@ -18,6 +20,9 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.Configure<SolrSettings>(builder.Configuration.GetSection("SolrSettings"));
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
+builder.Services.Configure<ContentSettings>(builder.Configuration.GetSection("Content"));
+builder.Services.AddSingleton<IViewCountService, ViewCountService>();
 // Add services to the container.
 
 builder.Services.AddControllers().AddNewtonsoftJson();

@@ -79,13 +79,7 @@ namespace Rino.FrontendApi.Controllers
         [Route("GetMostRead")]
         public async Task<IActionResult> GetMostRead(int nodeId)
         {
-            string MostReadList = string.Empty;
-            if (nodeId == 0)
-                MostReadList = _statsManager.GetMostRead(10);
-            if (string.IsNullOrEmpty(MostReadList))
-            {
-                MostReadList = await _statsManager.GetMostReadOldAsync(10, nodeId);
-            }
+            string MostReadList = await _statsManager.GetMostReadOldAsync(10, nodeId);
 
             if (!String.IsNullOrEmpty(MostReadList))
             {

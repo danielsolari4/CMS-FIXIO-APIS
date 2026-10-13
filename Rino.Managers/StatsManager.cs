@@ -11,7 +11,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -26,7 +25,6 @@ namespace Rino.Managers
         Task<NewsViewStatsDashboardDto> GetNewsViewStatsDashboard(string creationUser, int rows = 8, int maxNews = 500);
         Task ShareCount(int Id, DateTime PublicationDate);
         Task<string> GetMostReadOldAsync(int total, int nodeId);
-        public string GetMostRead(int total);
         public string GetMostShared(int total);
     }
 
@@ -543,47 +541,6 @@ namespace Rino.Managers
 
         }
 
-        public string GetMostRead(int total)
-        {
-            try
-            {
-                var client = new WebClient();
-                client.Headers.Add("cache-control", "no-cache");
-                client.Headers.Add("Host", "www.addthis.com");
-                client.Headers.Add("Cache-Control", "no-cache");
-                client.Headers.Add("Accept", "*/*");
-                client.Headers.Add("x-api-key", _appSettings.AddThis.XApiKey);
-
-                var ss = client.DownloadString(string.Format(_appSettings.AddThis.Url, _appSettings.AddThis.Token) + "/visits/urls.json?range=24hours");
-                var result = JsonConvert.DeserializeObject<List<RankingDocumentDto>>(ss).OrderByDescending(_ => _.visits).Take(total);
-
-                var mostReadList = string.Empty;
-                var i = total;
-                var id = string.Empty;
-                foreach (var document in result)
-                {
-                    if (document.url.Contains('?'))
-                    {
-                        id = document.url.Split('?').FirstOrDefault().Split('_').LastOrDefault();
-                    }
-                    else
-                        id = document.url.Split('_').LastOrDefault();
-
-                    if (!string.IsNullOrEmpty(mostReadList))
-                        mostReadList += " ";
-                    if (!string.IsNullOrEmpty(id))
-                        mostReadList += id + "^" + i;
-                    i--;
-                }
-
-                return mostReadList;
-            }
-            catch (Exception ex)
-            {
-                return string.Empty;
-            }
-
-        }
         public string GetMostShared(int total)
         {
             try
