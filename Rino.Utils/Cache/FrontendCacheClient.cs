@@ -33,8 +33,8 @@ namespace Rino.Utils.Cache
             if (normalized.Count == 0)
                 return result;
 
-            var instances = GetFrontendInstances(appSettings);
-            if (instances.Count == 0)
+            var nodes = GetFrontendInstances(appSettings);
+            if (nodes.Count == 0)
             {
                 CMSLogger.Error("[cache-invalidation] no frontend url configured.");
                 return result;
@@ -44,36 +44,82 @@ namespace Rino.Utils.Cache
             var mode = string.IsNullOrWhiteSpace(token) ? CacheInvalidationMode.LegacyNext : CacheInvalidationMode.Batch;
             result.Mode = mode.ToString();
 
-var stopwatch = Stopwatch.StartNew();
-            for (var i = 0; i < instances.Count; i++)
+            // El CDN se purga recién cuando todos los nodos ya tienen la versión nueva. Si se purgara
+            // antes, una visita que el balanceador manda a un nodo todavía viejo volvería a llenar
+            // el CDN con la página vieja hasta que venza su TTL.
+            var cdn = ResolveCdnPlan(appSettings, nodes);
+
+            var stopwatch = Stopwatch.StartNew();
+            for (var i = 0; i < nodes.Count; i++)
             {
-                var purgeCdn = GetPurgeCdn(appSettings, i == 0);
-                CacheInvalidationInstanceResult instance;
-
-                if (mode == CacheInvalidationMode.Batch)
-                {
-                    instance = await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings, hard);
-
-                    // Redundancia por diseño: si la forma moderna falla (front caído, token o CDN del
-                    // frente), se cae al legacy /api/ops/rebuild para no dejar el caché sin purgar.
-                    if (!instance.Success)
-                    {
-                        var legacy = await SendLegacy(instances[i], normalized, reason, kind, appSettings, hard);
-                        legacy.UsedFallbackMode = legacy.Success ? "batch→legacy" : "batch→legacy(failed)";
-                        instance = legacy;
-                    }
-                }
-                else
-                {
-                    instance = await SendLegacy(instances[i], normalized, reason, kind, appSettings, hard);
-                }
-
-                result.Instances.Add(instance);
+                var purgeCdn = cdn.Enabled && cdn.WithLastNode && i == nodes.Count - 1;
+                result.Instances.Add(await InvalidateOne(nodes[i], normalized, purgeCdn, cdnOnly: false, mode, token, reason, kind, appSettings, hard));
             }
+
+            if (cdn.Enabled && !cdn.WithLastNode)
+                result.Instances.Add(await InvalidateOne(cdn.Url, normalized, purgeCdn: true, cdnOnly: true, mode, token, reason, kind, appSettings, hard));
 
             stopwatch.Stop();
             result.ElapsedMs = stopwatch.ElapsedMilliseconds;
             return result;
+        }
+
+        private static async Task<CacheInvalidationInstanceResult> InvalidateOne(
+            string baseUrl,
+            IList<string> paths,
+            bool purgeCdn,
+            bool cdnOnly,
+            CacheInvalidationMode mode,
+            string token,
+            string reason,
+            CacheInvalidationKind kind,
+            AppSettings appSettings,
+            bool hard)
+        {
+            if (mode != CacheInvalidationMode.Batch)
+                return await SendLegacy(baseUrl, paths, reason, kind, appSettings, hard, purgeCdn);
+
+            var instance = await PostBatch(baseUrl, paths, purgeCdn, token, reason, appSettings, hard, cdnOnly);
+
+            // Redundancia por diseño: si la forma moderna falla (front caído, token o CDN del
+            // frente), se cae al legacy /api/ops/rebuild para no dejar el caché sin purgar.
+            if (!instance.Success)
+            {
+                var legacy = await SendLegacy(baseUrl, paths, reason, kind, appSettings, hard, purgeCdn);
+                legacy.UsedFallbackMode = legacy.Success ? "batch→legacy" : "batch→legacy(failed)";
+                instance = legacy;
+            }
+
+            return instance;
+        }
+
+        private sealed class CdnPlan
+        {
+            public bool Enabled { get; set; }
+            public bool WithLastNode { get; set; }
+            public string Url { get; set; }
+        }
+
+        /// <summary>
+        /// Decide si se purga el CDN y desde dónde. Un cliente con un solo servidor que hace todo
+        /// (nodo y CDN) termina en una única llamada, igual que antes.
+        /// </summary>
+        private static CdnPlan ResolveCdnPlan(AppSettings appSettings, IList<string> nodes)
+        {
+            var settings = appSettings?.CacheInvalidation;
+            bool enabled;
+            if (bool.TryParse(GetSetting("FrontEnd__CacheInvalidation__PurgeCdn"), out var envEnabled))
+                enabled = envEnabled;
+            else if (settings?.Cdn?.Enabled.HasValue == true)
+                enabled = settings.Cdn.Enabled.Value;
+            else
+                enabled = settings?.PurgeCdn ?? true;
+
+            var url = (GetSetting("FrontEnd__CacheInvalidation__CdnUrl") ?? settings?.Cdn?.Url)?.Trim();
+            var lastNode = nodes[nodes.Count - 1];
+            var withLastNode = string.IsNullOrWhiteSpace(url) || string.Equals(url.TrimEnd('/'), lastNode.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+
+            return new CdnPlan { Enabled = enabled, WithLastNode = withLastNode, Url = withLastNode ? lastNode : url };
         }
 
         /// <summary>
@@ -103,10 +149,13 @@ var stopwatch = Stopwatch.StartNew();
             }
 
             result.Mode = "Redirects";
+            var cdn = ResolveCdnPlan(appSettings, instances);
             var stopwatch = Stopwatch.StartNew();
-            foreach (var instance in instances)
+            for (var i = 0; i < instances.Count; i++)
             {
-                result.Instances.Add(await PostRedirects(instance, token, appSettings, normalized));
+                // Igual que en Invalidate: el CDN se purga una sola vez, en la última llamada.
+                var purgeCdn = normalized.Count > 0 && cdn.Enabled && i == instances.Count - 1;
+                result.Instances.Add(await PostRedirects(instances[i], token, appSettings, normalized, purgeCdn));
             }
 
             stopwatch.Stop();
@@ -121,7 +170,8 @@ var stopwatch = Stopwatch.StartNew();
             string token,
             string reason,
             AppSettings appSettings,
-            bool hard)
+            bool hard,
+            bool cdnOnly)
         {
             var endpointPath = GetSetting("FrontEnd__CacheInvalidation__Endpoint");
             if (string.IsNullOrWhiteSpace(endpointPath))
@@ -134,7 +184,8 @@ var stopwatch = Stopwatch.StartNew();
                 paths,
                 purgeCdn,
                 reason = reason ?? string.Empty,
-                hard
+                hard,
+                cdnOnly
             });
 
             var url = baseUrl.TrimEnd('/') + endpointPath;
@@ -158,9 +209,10 @@ var stopwatch = Stopwatch.StartNew();
             string reason,
             CacheInvalidationKind kind,
             AppSettings appSettings,
-            bool hard)
+            bool hard,
+            bool purgeCdn)
         {
-            var instanceResult = new CacheInvalidationInstanceResult { Url = baseUrl, PurgedCdn = true };
+            var instanceResult = new CacheInvalidationInstanceResult { Url = baseUrl, PurgedCdn = purgeCdn };
             var root = baseUrl.TrimEnd('/');
             var secret = GetSecret(appSettings);
             if (string.IsNullOrWhiteSpace(secret))
@@ -169,7 +221,7 @@ var stopwatch = Stopwatch.StartNew();
             var errors = new List<string>();
             foreach (var path in paths)
             {
-                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}&purgeCdn=true" + (hard ? "&hard=true" : string.Empty);
+                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}&purgeCdn={(purgeCdn ? "true" : "false")}" + (hard ? "&hard=true" : string.Empty);
                 var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl, appSettings);
                 instanceResult.Attempts += single.Attempts;
 
@@ -187,7 +239,7 @@ var stopwatch = Stopwatch.StartNew();
             return instanceResult;
         }
 
-        private static async Task<CacheInvalidationInstanceResult> PostRedirects(string baseUrl, string token, AppSettings appSettings, IList<string> paths)
+        private static async Task<CacheInvalidationInstanceResult> PostRedirects(string baseUrl, string token, AppSettings appSettings, IList<string> paths, bool purgeCdn)
         {
             var endpointPath = GetSetting("FrontEnd__CacheInvalidation__RedirectsEndpoint");
             if (string.IsNullOrWhiteSpace(endpointPath))
@@ -196,7 +248,7 @@ var stopwatch = Stopwatch.StartNew();
             var payload = JsonConvert.SerializeObject(new
             {
                 paths,
-                purgeCdn = paths.Count > 0
+                purgeCdn
             });
 
             var url = baseUrl.TrimEnd('/') + endpointPath;
@@ -210,7 +262,7 @@ var stopwatch = Stopwatch.StartNew();
                 return request;
             }, baseUrl, appSettings);
 
-            result.PurgedCdn = paths.Count > 0;
+            result.PurgedCdn = purgeCdn;
             return result;
         }
 
@@ -283,7 +335,14 @@ var stopwatch = Stopwatch.StartNew();
         {
             var instances = new List<string>();
 
-            if (appSettings?.CacheInvalidation?.Instances != null && appSettings.CacheInvalidation.Instances.Count > 0)
+            if (appSettings?.CacheInvalidation?.Nodes != null && appSettings.CacheInvalidation.Nodes.Count > 0)
+                instances.AddRange(appSettings.CacheInvalidation.Nodes.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            var envNodes = GetSetting("FrontEnd__CacheInvalidation__Nodes");
+            if (instances.Count == 0 && !string.IsNullOrWhiteSpace(envNodes))
+                instances.AddRange(envNodes.Split('|'));
+
+            if (instances.Count == 0 && appSettings?.CacheInvalidation?.Instances != null && appSettings.CacheInvalidation.Instances.Count > 0)
                 instances.AddRange(appSettings.CacheInvalidation.Instances.Where(x => !string.IsNullOrWhiteSpace(x)));
 
             if (instances.Count == 0 && !string.IsNullOrWhiteSpace(appSettings?.CacheInvalidation?.Url))
@@ -326,15 +385,6 @@ var stopwatch = Stopwatch.StartNew();
 
             var raw = GetSetting("FrontEnd__CacheInvalidation__MaxAttempts");
             return int.TryParse(raw, out var parsed) ? parsed : 3;
-        }
-
-        private static bool GetPurgeCdn(AppSettings appSettings, bool defaultValue)
-        {
-            var raw = GetSetting("FrontEnd__CacheInvalidation__PurgeCdn");
-            if (bool.TryParse(raw, out var parsed))
-                return parsed;
-
-            return appSettings?.CacheInvalidation?.PurgeCdn ?? defaultValue;
         }
 
         private static bool HasPlaceholderSegment(string path)

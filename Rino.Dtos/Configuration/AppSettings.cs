@@ -29,14 +29,33 @@ namespace Rino.Dtos.Configuration
 
     public class CacheInvalidation
     {
+        /// <summary>
+        /// Cada instancia de Next. A todas se les pide vencer la memoria y regenerar ISR; deben ser
+        /// direcciones directas a cada nodo, no la URL pública que pasa por el balanceador.
+        /// </summary>
+        public List<string> Nodes { get; set; }
+        /// <summary>Configuración vieja: se usa si Nodes no está definido.</summary>
         public List<string> Instances { get; set; }
         public string Url { get; set; }
         public string Token { get; set; }
         public string Endpoint { get; set; }
+        /// <summary>Configuración vieja: se usa si Cdn no está definido.</summary>
         public bool? PurgeCdn { get; set; }
+        public CacheInvalidationCdn Cdn { get; set; }
         public int? MaxAttempts { get; set; }
         public string SecretCacheKey { get; set; }
         public CacheInvalidationQueue Queue { get; set; }
+    }
+
+    public class CacheInvalidationCdn
+    {
+        /// <summary>false para clientes sin CDN.</summary>
+        public bool? Enabled { get; set; }
+        /// <summary>
+        /// Front que purga el CDN (tiene el token de Cloudflare). Vacío o igual al último nodo: la
+        /// purga viaja en la llamada a ese nodo. Otra URL: llamada aparte que solo purga el CDN.
+        /// </summary>
+        public string Url { get; set; }
     }
 
     public class CacheInvalidationQueue
