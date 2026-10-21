@@ -933,7 +933,8 @@ namespace Rino.Managers
                     }
 
 
-                    foreach (var pe in news.AssetJsons)
+                    // Los recién agregados todavía tienen Id 0: ya traen su Json y no deben pisarse con el primer ítem nuevo del DTO.
+                    foreach (var pe in news.AssetJsons.Where(x => x.Id != 0))
                     {
                         var peDto = newsDto.AssetJson.FirstOrDefault(p2 => p2.Id == pe.Id);
                         var prop = (AssetJsonProperties)peDto;
