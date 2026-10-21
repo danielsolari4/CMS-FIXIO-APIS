@@ -15,11 +15,16 @@ namespace Rino.Utils.Cache
     {
         private static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
+        /// <param name="hard">
+        /// true cuando el contenido dejó de ser público (borrado, despublicado o privado): el front
+        /// borra su respaldo en memoria en vez de vencerlo, para que no pueda volver a servirse.
+        /// </param>
         public static async Task<CacheInvalidationResult> Invalidate(
             IEnumerable<string> paths,
             AppSettings appSettings,
             string reason = null,
-            CacheInvalidationKind kind = CacheInvalidationKind.News)
+            CacheInvalidationKind kind = CacheInvalidationKind.News,
+            bool hard = false)
         {
             var result = new CacheInvalidationResult { Reason = reason };
             var normalized = NormalizePaths(paths);
@@ -47,20 +52,20 @@ var stopwatch = Stopwatch.StartNew();
 
                 if (mode == CacheInvalidationMode.Batch)
                 {
-                    instance = await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings);
+                    instance = await PostBatch(instances[i], normalized, purgeCdn: purgeCdn, token, reason, appSettings, hard);
 
                     // Redundancia por diseño: si la forma moderna falla (front caído, token o CDN del
                     // frente), se cae al legacy /api/ops/rebuild para no dejar el caché sin purgar.
                     if (!instance.Success)
                     {
-                        var legacy = await SendLegacy(instances[i], normalized, reason, kind, appSettings);
+                        var legacy = await SendLegacy(instances[i], normalized, reason, kind, appSettings, hard);
                         legacy.UsedFallbackMode = legacy.Success ? "batch→legacy" : "batch→legacy(failed)";
                         instance = legacy;
                     }
                 }
                 else
                 {
-                    instance = await SendLegacy(instances[i], normalized, reason, kind, appSettings);
+                    instance = await SendLegacy(instances[i], normalized, reason, kind, appSettings, hard);
                 }
 
                 result.Instances.Add(instance);
@@ -115,7 +120,8 @@ var stopwatch = Stopwatch.StartNew();
             bool purgeCdn,
             string token,
             string reason,
-            AppSettings appSettings)
+            AppSettings appSettings,
+            bool hard)
         {
             var endpointPath = GetSetting("FrontEnd__CacheInvalidation__Endpoint");
             if (string.IsNullOrWhiteSpace(endpointPath))
@@ -127,7 +133,8 @@ var stopwatch = Stopwatch.StartNew();
             {
                 paths,
                 purgeCdn,
-                reason = reason ?? string.Empty
+                reason = reason ?? string.Empty,
+                hard
             });
 
             var url = baseUrl.TrimEnd('/') + endpointPath;
@@ -150,7 +157,8 @@ var stopwatch = Stopwatch.StartNew();
             IList<string> paths,
             string reason,
             CacheInvalidationKind kind,
-            AppSettings appSettings)
+            AppSettings appSettings,
+            bool hard)
         {
             var instanceResult = new CacheInvalidationInstanceResult { Url = baseUrl, PurgedCdn = true };
             var root = baseUrl.TrimEnd('/');
@@ -161,7 +169,7 @@ var stopwatch = Stopwatch.StartNew();
             var errors = new List<string>();
             foreach (var path in paths)
             {
-                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}&purgeCdn=true";
+                var url = $"{root}/api/ops/rebuild?secret={Uri.EscapeDataString(secret)}&nocache={DateTime.UtcNow.Ticks}&path={Uri.EscapeDataString(path)}&purgeCdn=true" + (hard ? "&hard=true" : string.Empty);
                 var single = await SendWithRetries(() => new HttpRequestMessage(HttpMethod.Get, url), baseUrl, appSettings);
                 instanceResult.Attempts += single.Attempts;
 

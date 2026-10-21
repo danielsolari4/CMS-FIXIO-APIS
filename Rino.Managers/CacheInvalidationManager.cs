@@ -144,7 +144,35 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
         {
             await SolrHelper.DataImportAndWait(SolrCore.NEWS, _appSettings.Solr);
             var paths = await BuildNewsPaths(newsId, previous);
-            return await FrontendCacheClient.Invalidate(paths, _appSettings, reason ?? $"news:{newsId}", CacheInvalidationKind.News);
+            var hard = !await IsNewsPublic(newsId);
+            return await FrontendCacheClient.Invalidate(paths, _appSettings, reason ?? $"news:{newsId}", CacheInvalidationKind.News, hard);
+        }
+
+        /// <summary>
+        /// Indica si la nota sigue visible en el sitio después de reindexar Solr. Si no lo está
+        /// (borrada, despublicada, privada o programada a futuro), la purga es definitiva.
+        /// Si no se puede consultar, se asume pública: una purga normal no expone nada nuevo y
+        /// conserva el respaldo del front, que es lo que se necesita si Solr está caído.
+        /// </summary>
+        private async Task<bool> IsNewsPublic(int newsId)
+        {
+            try
+            {
+                var raw = await SolrHelper.ExecuteQuery(SolrCore.NEWS,
+                    $"q=Id:{newsId} AND IsDeleted:false AND IsPrivate:false AND Status:PUBLISHED AND PublicationDate:[* TO NOW]&rows=0",
+                    _appSettings.Solr);
+
+                var numFound = (raw as JObject)?["response"]?["numFound"]?.Value<long?>();
+                if (!numFound.HasValue)
+                    return true;
+
+                return numFound.Value > 0;
+            }
+            catch (Exception ex)
+            {
+                CMSLogger.Error($"[cache-invalidation] visibility check failed for news {newsId}: {ex.Message}");
+                return true;
+            }
         }
 
         public async Task<CacheInvalidationResult> InvalidateLayoutNow(int nodeId, string reason = null)
@@ -612,10 +640,15 @@ Task<CacheInvalidationResult> InvalidatePathsNow(IEnumerable<string> paths, stri
                     await SolrHelper.DataImportAndWait(SolrCore.NEWS, _appSettings.Solr);
 
                     var paths = new List<string>();
+                    var hard = false;
                     foreach (var id in ids)
+                    {
                         paths.AddRange(await BuildNewsPaths(id, null));
+                        if (!await IsNewsPublic(id))
+                            hard = true;
+                    }
 
-                    return await FrontendCacheClient.Invalidate(paths, _appSettings, item.Reason, CacheInvalidationKind.News);
+                    return await FrontendCacheClient.Invalidate(paths, _appSettings, item.Reason, CacheInvalidationKind.News, hard);
 
                 case KindLayout:
                     if (!item.NodeId.HasValue || item.NodeId.Value <= 0)
