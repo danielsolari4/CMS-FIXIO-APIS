@@ -70,6 +70,8 @@ namespace Rino.BackendApi.Controllers
         {
             return await TryJsonResultAsync(async () =>
             {
+                URLRedirectManager.EnsureNotHomeRedirect(urlRedirectDto.From);
+
                 var normalizedFrom = URLRedirectManager.NormalizeFrom(urlRedirectDto.From);
                 var nodeDescription = normalizedFrom?.Trim('/');
 

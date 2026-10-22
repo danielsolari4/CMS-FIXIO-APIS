@@ -47,6 +47,7 @@ namespace Rino.Managers
 
         public async Task<URLRedirectDto> Add(URLRedirectDto entity)
         {
+            EnsureNotHomeRedirect(entity.From);
             entity.From = NormalizeFrom(entity.From);
             entity.To = NormalizeTo(entity.To);
 
@@ -134,6 +135,8 @@ namespace Rino.Managers
             if (redirect == null)
                 throw new ItemNotFoundException("redirect");
 
+            EnsureNotHomeRedirect(dto.From);
+
             var previousFrom = redirect.From;
             redirect.From = NormalizeFrom(dto.From);
             redirect.To = NormalizeTo(dto.To);
@@ -142,6 +145,44 @@ namespace Rino.Managers
             await _repository.Update(redirect);
             await RefreshRedirectsCache($"redirect:update:{redirect.Id}", previousFrom, redirect.From);
             
+        }
+
+        private static readonly string[] HomeAliases = { "/", "/index", "/index.html", "/index.htm", "/index.php" };
+
+        public static void EnsureNotHomeRedirect(string from)
+        {
+            if (IsHomePath(from))
+                throw new Exception("ULEX_002");
+        }
+
+        public static bool IsHomePath(string from)
+        {
+            if (string.IsNullOrWhiteSpace(from))
+                return true;
+
+            var path = from.Trim();
+            for (var i = 0; i < 3 && path.Contains("%"); i++)
+            {
+                try { path = Uri.UnescapeDataString(path); }
+                catch (UriFormatException) { break; }
+            }
+
+            if (Uri.TryCreate(path, UriKind.Absolute, out var absolute) && !absolute.IsFile)
+                path = absolute.AbsolutePath;
+
+            var normalized = NormalizeFrom(path);
+            if (string.IsNullOrWhiteSpace(normalized))
+                return true;
+
+            var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries)
+                .Where(s => s != ".")
+                .ToList();
+
+            if (segments.Contains(".."))
+                return true;
+
+            var collapsed = "/" + string.Join("/", segments);
+            return HomeAliases.Contains(collapsed);
         }
 
         public static string NormalizeFrom(string value)
