@@ -310,7 +310,10 @@ namespace Rino.Managers
             if (!HasMongoConfiguration())
                 throw new InvalidOperationException("MongoDb settings are required to use stats.");
 
-            _client = new MongoClient(_appSettings.MongoDb.ConnectionString);
+            var settings = MongoClientSettings.FromConnectionString(_appSettings.MongoDb.ConnectionString);
+            // El default es 30 s: con Mongo caído cada visita y cada carga del dashboard quedaba colgada ese tiempo.
+            settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5);
+            _client = new MongoClient(settings);
             _database = _client.GetDatabase(_appSettings.MongoDb.DatabaseName);
             return _database;
         }
@@ -363,13 +366,26 @@ namespace Rino.Managers
                 return new Dictionary<int, NewsViewStatsDashboardItemDto>();
 
             var collectionName = GetNewsViewStatsCollectionName();
-            var exists = await CollectionExistsAsync(collectionName);
-            if (!exists || newsIds == null || newsIds.Count == 0)
-                return new Dictionary<int, NewsViewStatsDashboardItemDto>();
+            List<BsonDocument> documents;
+            try
+            {
+                var exists = await CollectionExistsAsync(collectionName);
+                if (!exists || newsIds == null || newsIds.Count == 0)
+                    return new Dictionary<int, NewsViewStatsDashboardItemDto>();
 
-            var collection = GetMongoDatabase().GetCollection<BsonDocument>(collectionName);
-            var filter = Builders<BsonDocument>.Filter.In("newsId", newsIds);
-            var documents = await collection.Find(filter).ToListAsync();
+                var collection = GetMongoDatabase().GetCollection<BsonDocument>(collectionName);
+                var filter = Builders<BsonDocument>.Filter.In("newsId", newsIds);
+                documents = await collection.Find(filter).ToListAsync();
+            }
+            catch (TimeoutException)
+            {
+                // Sin Mongo el dashboard igual muestra las notas, sin visitas.
+                return new Dictionary<int, NewsViewStatsDashboardItemDto>();
+            }
+            catch (MongoException)
+            {
+                return new Dictionary<int, NewsViewStatsDashboardItemDto>();
+            }
 
             return documents
                 .Select(ParseNewsViewStats)
