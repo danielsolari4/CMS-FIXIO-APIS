@@ -16,7 +16,8 @@ namespace Rino.Dtos.Components
         FeaturedNews = 8,
         Gallery = 9,
         Section = 10,
-        Shorts = 11
+        Shorts = 11,
+        TodayInCostaRica = 12
     }
 
 

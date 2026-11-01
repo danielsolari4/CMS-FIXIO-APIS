@@ -35,5 +35,8 @@ namespace Rino.Dtos.JsonEntities
 
         [JsonProperty(PropertyName = "colorContraste")]
         public string ColorContraste { get; set; }
+        /// <summary>Separadores del área (como en el prototipo): vertical, horizontal o all. Vacío = sin separadores.</summary>
+        [JsonProperty(PropertyName = "separators")]
+        public string Separators { get; set; }
     }
 }

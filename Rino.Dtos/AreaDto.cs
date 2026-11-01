@@ -36,6 +36,9 @@ namespace Rino.Dtos
 
         [JsonProperty(PropertyName = "colorContraste")]
         public string ColorContraste { get; set; }
+        /// <summary>Separadores del área (como en el prototipo): vertical, horizontal o all. Vacío = sin separadores.</summary>
+        [JsonProperty(PropertyName = "separators")]
+        public string Separators { get; set; }
 
 
         public string GenerateHtml(HtmlBuilder builder, string imageUrl)
@@ -45,6 +48,9 @@ namespace Rino.Dtos
 
             if (!string.IsNullOrEmpty(CssTitle))
                 Css += " " + CssTitle;
+
+            if (!string.IsNullOrEmpty(Separators))
+                Css += " area--sep-" + Separators;
 
             var html = builder.Html.ReplaceByPropertyName("area.css", Css)
                .ReplaceByPropertyName("area.thematic", !string.IsNullOrEmpty(BackgroundColor) ? "area--tematica" : "")

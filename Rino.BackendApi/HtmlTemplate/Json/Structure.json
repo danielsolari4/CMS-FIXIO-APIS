@@ -328,6 +328,24 @@
             "Description": "Listado Tres",
             "Icon": "mdi mdi-filter-variant",
             "Id": 7
+          },
+          {
+            "Name": "al-minuto",
+            "Description": "Al minuto",
+            "Icon": "mdi mdi-timeline-clock-outline",
+            "Id": 8
+          },
+          {
+            "Name": "numeradas",
+            "Description": "Numeradas",
+            "Icon": "mdi mdi-numeric-1-circle-outline",
+            "Id": 9
+          },
+          {
+            "Name": "cola",
+            "Description": "Cola numerada",
+            "Icon": "mdi mdi-format-list-numbered",
+            "Id": 10
           }
         ],
         "Structure": {
@@ -440,6 +458,23 @@
           "Title": "",
           "CategoryId": 0,
           "GalleryId": 0,
+          "Html": ""
+        }
+      },
+      {
+        "Name": "Hoy en Costa Rica",
+        "Control": "",
+        "Icon": "mdi-weather-partly-cloudy",
+        "Type": 12,
+        "CategoryId": 3,
+        "Html": "<div class='block'><section class='hoy' aria-label='Hoy en Costa Rica'><header><strong>Hoy en Costa Rica</strong><span>Hoy</span></header><dl class='datos'><div><dt>Dólar</dt><dd>₡450 / ₡456</dd></div><div><dt>San José</dt><dd>24° ⛅</dd></div><div><dt>Restricción</dt><dd><span class='placa'>{{component.RestrictionFirst}}</span><span class='placa'>{{component.RestrictionSecond}}</span></dd></div></dl><div class='gas'><span>Súper <b>{{component.FuelSuper}}</b></span><span>Regular <b>{{component.FuelRegular}}</b></span><span>Diésel <b>{{component.FuelDiesel}}</b></span></div></section></div>",
+        "Css": "",
+        "Structure": {
+          "RestrictionFirst": "",
+          "RestrictionSecond": "",
+          "FuelSuper": "",
+          "FuelRegular": "",
+          "FuelDiesel": "",
           "Html": ""
         }
       }

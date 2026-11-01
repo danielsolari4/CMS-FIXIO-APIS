@@ -48,6 +48,9 @@ namespace Rino.Dtos.JsonEntities
 
         [JsonProperty(PropertyName = "colorContraste")]
         public string ColorContraste { get; set; }
+        /// <summary>Separadores del área (como en el prototipo): vertical, horizontal o all. Vacío = sin separadores.</summary>
+        [JsonProperty(PropertyName = "separators")]
+        public string Separators { get; set; }
     }
 
     public class RegionInstanceJson
@@ -150,6 +153,19 @@ namespace Rino.Dtos.JsonEntities
 
     public class ComponentInstanceShortsJson : ComponentInstanceBaseJson
     {
+    }
+
+    /// <summary>
+    /// "Hoy en Costa Rica": el tipo de cambio y el clima los trae el sitio; acá solo se guardan los datos que carga el editor:
+    /// los dos dígitos de la restricción vehicular y, opcionalmente, los precios de los combustibles.
+    /// </summary>
+    public class ComponentInstanceTodayInCostaRicaJson : ComponentInstanceBaseJson
+    {
+        public string RestrictionFirst { get; set; }
+        public string RestrictionSecond { get; set; }
+        public string FuelSuper { get; set; }
+        public string FuelRegular { get; set; }
+        public string FuelDiesel { get; set; }
     }
 
     public class ComponentInstanceLastNewsJson : ComponentInstanceBaseJson
