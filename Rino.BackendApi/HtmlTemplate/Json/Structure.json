@@ -477,6 +477,21 @@
           "FuelDiesel": "",
           "Html": ""
         }
+      },
+      {
+        "Name": "Reproductor de videos",
+        "Control": "",
+        "Icon": "mdi-play-box-multiple-outline",
+        "Type": 13,
+        "CategoryId": 3,
+        "Html": "<div class='block'><section class='reproductor-videos' aria-label='{{component.Title}}'><div class='player'><button class='play' aria-label='Reproducir'></button><div class='info'><h3>{{component.Title}}</h3></div></div><ol class='cola'><li class='actual'><div class='img'></div><div><h4>Video 1</h4></div></li><li><div class='img'></div><div><h4>Video 2</h4></div></li><li><div class='img'></div><div><h4>Video 3</h4></div></li></ol></section></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "GalleryId": 0,
+          "IsLive": false,
+          "Html": ""
+        }
       }
     ]
   },

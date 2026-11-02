@@ -22,6 +22,7 @@ namespace Rino.Dtos.Factories
                 case ComponentType.Section: return new ComponentSectionDto();
                 case ComponentType.Shorts: return new ComponentShortsDto();
                 case ComponentType.TodayInCostaRica: return new ComponentTodayInCostaRicaDto();
+                case ComponentType.VideoPlayer: return new ComponentVideoPlayerDto();
                 default:
                     return null;
             }
@@ -44,6 +45,7 @@ namespace Rino.Dtos.Factories
                 case ComponentType.Section: return new ComponentInstanceSectionJson();
                 case ComponentType.Shorts: return new ComponentInstanceShortsJson();
                 case ComponentType.TodayInCostaRica: return new ComponentInstanceTodayInCostaRicaJson();
+                case ComponentType.VideoPlayer: return new ComponentInstanceVideoPlayerJson();
                 default:
                     return null;
             }

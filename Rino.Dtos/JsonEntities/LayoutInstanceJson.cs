@@ -213,4 +213,14 @@ namespace Rino.Dtos.JsonEntities
 
         public int GalleryId { get; set; }
     }
+
+    /// <summary>"Reproductor de videos": los videos salen de la galería elegida; IsLive agrega la etiqueta "EN VIVO".</summary>
+    public class ComponentInstanceVideoPlayerJson : ComponentInstanceBaseJson
+    {
+        public string Title { get; set; }
+
+        public int GalleryId { get; set; }
+
+        public bool IsLive { get; set; }
+    }
 }
