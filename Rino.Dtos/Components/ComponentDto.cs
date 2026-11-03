@@ -18,7 +18,8 @@ namespace Rino.Dtos.Components
         Section = 10,
         Shorts = 11,
         TodayInCostaRica = 12,
-        VideoPlayer = 13
+        VideoPlayer = 13,
+        ProgramsGrid = 14
     }
 
 

@@ -125,6 +125,8 @@ namespace Rino.Managers
             string path = null;
             if (string.Equals(settingName, "Shorts", StringComparison.OrdinalIgnoreCase))
                 path = "/api/media/shorts";
+            else if (string.Equals(settingName, "ProgramsGrid", StringComparison.OrdinalIgnoreCase))
+                path = "/api/media/programs-grid";
             else if (string.Equals(settingName, "LiveStream", StringComparison.OrdinalIgnoreCase))
                 path = "/api/broadcast/live";
             else if (string.Equals(settingName, "AdsText", StringComparison.OrdinalIgnoreCase))

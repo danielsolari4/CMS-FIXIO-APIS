@@ -155,6 +155,11 @@ namespace Rino.Dtos.JsonEntities
     {
     }
 
+    /// <summary>"Programas" (tipo 14): sin parámetros propios, la lista (hasta 10 programas) se carga en Configuración → Programas y el sitio la lee de la configuración `ProgramsGrid`.</summary>
+    public class ComponentInstanceProgramsGridJson : ComponentInstanceBaseJson
+    {
+    }
+
     /// <summary>
     /// "Hoy en Costa Rica": el tipo de cambio y el clima los trae el sitio; acá solo se guardan los datos que carga el editor:
     /// los dos dígitos de la restricción vehicular y, opcionalmente, los precios de los combustibles.
