@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Rino.BackendApi.Attributes;
 using Rino.BackendApi.Controllers.ExceptionController;
 using Rino.Dtos;
@@ -28,12 +29,14 @@ namespace Rino.BackendApi.Controllers
         private readonly AppSettings _appSettings;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAmazonS3Manager _amazonS3Manager;
-        public UserController(IUserManager manager, AppSettings appSettings, IHttpContextAccessor httpContextAccessor, IAmazonS3Manager amazonS3Manager)
+        private readonly IApplicationUserManager _applicationUserManager;
+        public UserController(IUserManager manager, AppSettings appSettings, IHttpContextAccessor httpContextAccessor, IAmazonS3Manager amazonS3Manager, IApplicationUserManager applicationUserManager)
         {
             _manager = manager;
             _appSettings = appSettings;
             _httpContextAccessor = httpContextAccessor;
             _amazonS3Manager = amazonS3Manager;
+            _applicationUserManager = applicationUserManager;
         }
 
         [HttpGet]
@@ -69,6 +72,61 @@ namespace Rino.BackendApi.Controllers
                 {
                     return Ok(await SolrHelper.ExecuteQuery(SolrCore.USER, HttpUtility.UrlDecode(HttpContext.Request.QueryString.ToString()), _appSettings.Solr));
                 });
+        }
+
+        [HttpGet, Route("GetLockedOut")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetLockedOut()
+        {
+            if (!await HasAnyUserPermission("GetAllSolr", "GetAll", "Get"))
+                return Forbid(JwtBearerDefaults.AuthenticationScheme);
+
+            return await TryJsonResultAsync(async () =>
+                Ok(CMSResponse(await _manager.GetLockedOut())));
+        }
+
+        [HttpPut, Route("Unlock")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> Unlock(UpdateUserDtoBindingModel userDto)
+        {
+            if (!await HasAnyUserPermission("Put"))
+                return Forbid(JwtBearerDefaults.AuthenticationScheme);
+
+            return await TryJsonResultAsync(async () =>
+            {
+                if (!ModelState.IsValid)
+                    throw new ModelException(ModelState.GetErrorMessage());
+
+                await _manager.Unlock(userDto.Id);
+                return Ok();
+            });
+        }
+
+        private async Task<bool> HasAnyUserPermission(params string[] actionNames)
+        {
+            var loggedUser = GetLoggedUser();
+            if (loggedUser == null)
+                return false;
+
+            var account = await _applicationUserManager.FindByIdAsync(loggedUser.Id.ToString(), System.Threading.CancellationToken.None);
+            if (account == null || !account.IsEnabled || account.IsDeleted)
+                return false;
+
+            var actionClaim = User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.UserData)?.Value;
+            if (string.IsNullOrWhiteSpace(actionClaim))
+                return false;
+
+            var actionIds = JsonConvert.DeserializeObject<System.Collections.Generic.List<int>>(actionClaim);
+            if (actionIds == null)
+                return false;
+
+            foreach (var actionName in actionNames)
+            {
+                if (await _applicationUserManager.HasAccessToActionAsync("User", actionName, actionIds))
+                    return true;
+            }
+
+            return false;
         }
 
         [HttpPut]

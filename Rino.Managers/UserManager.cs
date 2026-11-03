@@ -18,6 +18,8 @@ namespace Rino.Managers
     {
         Task Enable(int id);
         Task Disable(int id);
+        Task<ICollection<UserDto>> GetLockedOut();
+        Task Unlock(int id);
         Task SetProfileImagePath(UserDto dto);
         Task<UserDto> GetByExternalId(string facebookId, string twitterId);
     }
@@ -139,6 +141,33 @@ namespace Rino.Managers
 
             _repository.Update(user);
             await SolrHelper.DataImport(SolrCore.USER, _appSettings.Solr);
+        }
+
+        public async Task<ICollection<UserDto>> GetLockedOut()
+        {
+            var now = DateTime.UtcNow;
+            var users = await Task.FromResult(_repository.GetAll().Where(u =>
+                !u.IsDeleted &&
+                u.Discriminator == UserDiscriminator.Backend &&
+                u.LockoutEndDateUtc.HasValue &&
+                u.LockoutEndDateUtc.Value > now));
+
+            return users.Select(MapToDto).ToList();
+        }
+
+        public async Task Unlock(int id)
+        {
+            if (id <= 0)
+                throw new ArgumentNullException("id");
+
+            var user = await InternalGetById(id);
+
+            if (user == null || user.IsDeleted || user.Discriminator != UserDiscriminator.Backend)
+                throw new EntityException("user");
+
+            user.AccessFailedCount = 0;
+            user.LockoutEndDateUtc = null;
+            _repository.Update(user);
         }
 
         public async Task Delete(UserDto dto)
