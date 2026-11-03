@@ -481,7 +481,11 @@ namespace Rino.BackendApi.Controllers
             if (passwordVerification == PasswordVerificationResult.Failed)
             {
                 user.AccessFailedCount++;
-                if (user.LockoutEnabled && user.AccessFailedCount >= 5)
+                // This authentication flow persists lockout state directly instead of using
+                // SignInManager.Lockout. Do not gate it on LockoutEnabled: existing CMS users
+                // may have that Identity flag unset, which otherwise prevents them from ever
+                // reaching the configured failed-attempt threshold.
+                if (user.AccessFailedCount >= 5)
                     user.LockoutEndDateUtc = DateTime.UtcNow.AddHours(4);
 
                 await _dbContext.Database.ExecuteSqlInterpolatedAsync(
