@@ -77,6 +77,7 @@ namespace Rino.Utils.Helpers
 
             var extension = Path.GetExtension(filePath).TrimStart('.').ToLowerInvariant();
             return extension == "png" || extension == "jpeg" || extension == "jpg"
+                || extension == "jfif" || extension == "webp"
                 || extension == "gif" || extension == "tiff" || extension == "tif" || extension == "bmp";
         }
 

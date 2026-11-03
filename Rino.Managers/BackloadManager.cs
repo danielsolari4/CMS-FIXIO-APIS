@@ -14,6 +14,7 @@ using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tiff;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
@@ -475,8 +476,11 @@ namespace Rino.Managers
         {
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
 
-            if (extension == ".jpg" || extension == ".jpeg")
+            if (extension == ".jpg" || extension == ".jpeg" || extension == ".jfif")
                 return new JpegEncoder { Quality = _appSettings.Media.FileUpload.ImageQuality };
+
+            if (extension == ".webp")
+                return new WebpEncoder { Quality = _appSettings.Media.FileUpload.ImageQuality };
 
             if (extension == ".png")
                 return new PngEncoder();
@@ -497,8 +501,11 @@ namespace Rino.Managers
         {
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
 
-            if (extension == ".jpg" || extension == ".jpeg")
+            if (extension == ".jpg" || extension == ".jpeg" || extension == ".jfif")
                 return "image/jpeg";
+
+            if (extension == ".webp")
+                return "image/webp";
 
             if (extension == ".png")
                 return "image/png";
