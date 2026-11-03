@@ -492,6 +492,21 @@
           "IsLive": false,
           "Html": ""
         }
+      },
+      {
+        "Name": "Grilla de programas",
+        "Control": "",
+        "Icon": "mdi-television-guide",
+        "Type": 14,
+        "CategoryId": 3,
+        "Html": "<div class='block'><section class='programas-grid' aria-label='Programas'><ul class='programas-lista'><li><div class='img'></div><h4>Programa 1</h4><p>Lun–Vie · 6:00 a.m.</p></li><li><div class='img'></div><h4>Programa 2</h4><p>Dom · 8:00 p.m.</p></li><li><div class='img'></div><h4>Programa 3</h4><p>Sáb · 1:00 p.m.</p></li></ul></section></div>",
+        "Css": "",
+        "Structure": {
+          "Title": "",
+          "CategoryId": 0,
+          "GalleryId": 0,
+          "Html": ""
+        }
       }
     ]
   },
